@@ -14,6 +14,16 @@ docker build -t spark-board .
 docker run -ti --rm spark-board
 ```
 
+### Generate parser
+```shell
+cd tree-sitter-spark-explain
+tree-sitter generate
+```
+
+### Run tests
+```shell
+make tests
+```
 
 ### POC Idea:
 This class has the query execution and methods to "explain" it
