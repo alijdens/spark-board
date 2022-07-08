@@ -14,6 +14,11 @@ docker build -t spark-board .
 docker run -ti --rm spark-board
 ```
 
+## How to use it
+
+### Dependencies
+pipenv
+
 ### Generate parser
 ```shell
 cd tree-sitter-spark-explain
