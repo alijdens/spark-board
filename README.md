@@ -10,8 +10,10 @@ docker build -t spark-board .
 
 ### Run Docker image
 
+To run the docker image as a development environment (i.e. interactive session with your local code mounted in the image) just run:
+
 ```shell
-docker run -ti --rm spark-board
+make docker
 ```
 
 ## How to use it
@@ -20,6 +22,9 @@ docker run -ti --rm spark-board
 pipenv
 
 ### Generate parser
+
+Requires [tree-sitter installed](https://tree-sitter.github.io/tree-sitter/creating-parsers#dependencies) (or run this command inside the docker image).
+
 ```shell
 cd tree-sitter-spark-explain
 tree-sitter generate
