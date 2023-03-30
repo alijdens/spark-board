@@ -1,88 +1,105 @@
 module.exports = grammar({
-  name: 'PYSPARK_EXPLAIN',
+    name: 'PYSPARK_EXPLAIN',
 
-  rules: {
-    // TODO: add the actual grammar rules
-    source_file: $ => seq(
-    	'\'Project [*]\n', 
-    	repeat($.transformation)
-    ),
+    rules: {
+        // TODO: add the actual grammar rules
+        source_file: $ => seq(
+            '\'Project [*]\n',
+            repeat($.transformation)
+        ),
 
-    transformation: $ => seq($.prefix, 
-    	choice(
-	    	$.project,
-	    	$.filter,
-	    	$.relation,
-	    	$.rdd
-    	)
-    ),
+        transformation: $ => seq(
+            $._prefix,
+            choice(
+                $.project,
+                $.filter,
+                $.relation,
+                $.rdd,
+                $.join
+            )
+        ),
 
-    project: $ => seq(
-    	'Project',
-    	$.columns
-    ),
+        project: $ => seq(
+            'Project',
+            $.columns
+        ),
 
-    rdd: $ => seq(
-    	'LogicalRDD',
-    	$.columns,
-    	',',
-    	$.boolean
-    ),
+        rdd: $ => seq(
+            'LogicalRDD',
+            $.columns,
+            ',',
+            $.boolean
+        ),
 
-    boolean: $ => choice('true', 'false'),
+        join: $ => seq(
+            'Join',
+            $.join_type,
+            ',',
+            $.condition
+        ),
 
-    prefix: $ => /( {3})*\+- /,
+        join_type: $ => seq(
+            choice("Inner")
+        ),
 
-    filter: $ => seq(
-    	'Filter',
-    	$.condition
-    ),
+        boolean: $ => choice('true', 'false'),
 
-	condition: $ => seq(
-		'(', // Pensar si esto es parte de la condition.
-		$._operation_parameter, 
-		$.operator,
-		$._operation_parameter,
-		')'
-	),
+        _prefix: $ => /( {3})*\+- /,
 
-	operator: $ => '=',
+        filter: $ => seq(
+            'Filter',
+            $.condition
+        ),
 
-	relation: $ => seq(
-		'Relation', // Tabla
-		$.columns,
-		optional($.file_format)
-	),
+        condition: $ => seq(
+            '(', // Pensar si esto es parte de la condition.
+            $.operation_parameter,
+            ' ',
+            $.operator,
+            ' ',
+            $.operation_parameter,
+            ')'
+        ),
 
-	file_format: $ => $.literal,
+        operator: $ => choice('=', '<', '>', '!=', '<>', '>=', '<='),
 
-	_operation_parameter: $ => choice(
-		$.literal, 
-		$.column
-	),
+        relation: $ => seq(
+            'Relation', // Tabla
+            $.columns,
+            optional($.file_format)
+        ),
 
-	literal: $ => /[a-zA-Z_0-9]+/,
+        file_format: $ => $.literal,
 
-    columns: $ => seq(
-    	'[',
-    	optional($._columns),
-    	']'
-    ),
+        operation_parameter: $ => choice(
+            $.column,
+            $.literal
+        ),
 
-    _columns: $ => commaSep1($.column),
+        columns: $ => seq(
+            '[',
+            optional($._columns),
+            ']'
+        ),
 
-    column: $ => seq($.column_name, '#', $.number),
+        _columns: $ => commaSep1($.column),
 
-    column_name: $ => /[a-zA-Z_0-9]+/,
+        column: $ => seq($._column_id, optional(seq(" AS ", $._column_id))),
 
-    number: $ => /[0-9]+/
-  }
+        _column_id: $ => seq($.column_name, '#', $.number),
+
+        column_name: $ => /[-_a-zA-Z0-9 ()]+/,
+
+        number: $ => /\d+/,
+
+        literal: $ => /\w+/,
+    }
 });
 
 function commaSep1(rule) {
-  return sep1(rule, ',')
+    return sep1(rule, ', ')
 }
 
 function sep1(rule, separator) {
-  return seq(rule, repeat(seq(separator, rule)))
+    return seq(rule, repeat(seq(separator, rule)))
 }
