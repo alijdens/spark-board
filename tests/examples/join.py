@@ -1,7 +1,4 @@
 from context import spark
-from plan_extractor.explain_generator import ExplainGenerator
-from plan_extractor.explain_parser import ExplainParser
-from spark_board import html
 
 
 people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
