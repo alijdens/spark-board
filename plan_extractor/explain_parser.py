@@ -21,13 +21,15 @@ class Node:
 
 
 def build_graph(df: DataFrame) -> Node:
+    # we add a dummy projection of all columns to Spark resolves the next
+    # transformations in the plan. Otherwise, the columns will be "unresolved"
+    df = df.select("*")
     root = df._jdf.queryExecution().logical()
 
-    # TODO: skip the 'Project [*]' node
-    return parse_transformation(node=root)
+    # skip the 'Project [*]' node
+    first_child = next(iterate_java_object(root.children()))
 
-    for transformation in iterate_java_object(plan.children()):
-        parse_transformation(node=transformation)
+    return parse_transformation(node=first_child)
 
 
 def parse_transformation(node: JavaObject) -> Node:
@@ -48,7 +50,7 @@ def parse_transformation(node: JavaObject) -> Node:
 
 def _parse_project(node: JavaObject):
     columns = []
-    for col in iterate_java_object(node.projectList().iterator()):
+    for col in iterate_java_object(node.projectList()):
         # TODO: col.dataType() might be useful too
         if col.nodeName() == "Alias":
             alias = col.name()
