@@ -3,10 +3,10 @@ from plan_extractor.explain_generator import ExplainGenerator
 from plan_extractor.explain_parser import ExplainParser
 
 
-# df = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
-# df = df.filter(df.age > 18)
-# df = df.filter(df.city == "CABA")
-# df = df.select("name", "age", df.dni.alias("user DNI"))
+df = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
+df = df.filter(df.age > 18)
+df = df.filter(df.city == "CABA")
+df = df.select("name", "age", df.dni.alias("user DNI"))
 
 # plan = ExplainGenerator(df=df).generate()
 plan = """

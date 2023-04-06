@@ -4,8 +4,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import plan_extractor
-
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
