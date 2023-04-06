@@ -10,4 +10,7 @@ grammar:
 docker:
 	docker run -ti --rm  -v $(shell pwd):/app spark-board
 
+docker-image:
+	docker build -t spark-board .
+
 .PHONY: tests init
