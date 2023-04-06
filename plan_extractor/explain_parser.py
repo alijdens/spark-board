@@ -19,6 +19,13 @@ class Node:
     metadata: dict  # TODO: make it more type specific
     children: List['Node']
 
+    def pprint(self, indent: int = 0) -> None:
+        """Prints a human readable representation of the tree."""
+
+        print("  " * indent + f"{self.type.name} {self.metadata}")
+        for child in self.children:
+            child.pprint(indent=indent + 1)
+
 
 def build_graph(df: DataFrame) -> Node:
     # we add a dummy projection of all columns to Spark resolves the next
@@ -38,12 +45,12 @@ def parse_transformation(node: JavaObject) -> Node:
         "Project": _parse_project,
         "Filter": _parse_filter,
         "LogicalRDD": _parse_logical_rdd,
+        "Join": _parse_join,
         # "relation": _parse_relation,
-        # "join": _parse_join,
     }
     parse_func = parsers.get(node.nodeName())
     if not parse_func:
-        raise NotImplementedError(f"Transformation not supported: {node.nodeName()}")
+        raise NotImplementedError(f"Transformation not supported: '{node.nodeName()}'")
 
     return parse_func(node)
 
@@ -51,7 +58,7 @@ def parse_transformation(node: JavaObject) -> Node:
 def _parse_project(node: JavaObject):
     columns = []
     for col in iterate_java_object(node.projectList()):
-        # TODO: col.dataType() might be useful too
+        # TODO: col.dataType() and col.nullable() might be useful too
         if col.nodeName() == "Alias":
             alias = col.name()
 
@@ -68,41 +75,50 @@ def _parse_project(node: JavaObject):
     # project should only have a single child
     assert node.children().size() == 1
 
-    return [
-        Node(
-            type=NodeType.Project,
-            metadata={"columns": columns},
-            # recursive call to continue the DFS on the transformations tree
-            children=parse_transformation(node.child()),
-        )
-    ]
+    return Node(
+        type=NodeType.Project,
+        metadata={"columns": columns},
+        # recursive call to continue the DFS on the transformations tree
+        children=[parse_transformation(node.child())],
+    )
 
 
 def _parse_filter(node: JavaObject) -> Node:
     for algo in iterate_java_object(node.condition().children()):
         if algo.nodeName() == "AttributeReference":
-            print(algo.toJSON())
+            # print(algo.toJSON())
+            pass
         elif algo.nodeName() == "Literal":
-            print(algo.toJSON())
+            # print(algo.toJSON())
+            pass
 
-    return [
-        Node(
-            type=NodeType.Filter,
-            metadata={},
-            children=parse_transformation(node.child()),
-        )
-    ]
+    return Node(
+        type=NodeType.Filter,
+        metadata={},
+        children=[parse_transformation(node.child())],
+    )
 
 
 def _parse_logical_rdd(node: JavaObject) -> Node:
     # TODO: collect metadata about RDD columns
-    return [
-        Node(
-            type=NodeType.LogicalRDD,
-            metadata={},
-            children=[],
-        )
-    ]
+    return Node(
+        type=NodeType.LogicalRDD,
+        metadata={},
+        children=[],
+    )
+
+
+def _parse_join(node: JavaObject) -> Node:
+    # joins have two children because they combine 2 data frames into 1
+    assert node.children().size() == 2, node.children().size()
+
+    return Node(
+        type=NodeType.Join,
+        metadata={"condition": node.condition().toString(), "join_type": node.joinType().toString()},
+        children=[
+            parse_transformation(child) for child in iterate_java_object(node.children())
+        ],
+    )
 
 
 def iterate_java_object(iterable: JavaObject):
