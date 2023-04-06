@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .context import spark, StructType, StructField, StringType
-from plan_extractor.plan_parser import build_tree, Node, NodeType
+from plan_extractor.explain_parser import build_graph, Node, NodeType
 from typing import List
 
 import unittest
@@ -15,7 +15,7 @@ class PlanParserTestSuite(unittest.TestCase):
         df = df.filter(df.city == "CABA")
         df = df.select("name", "age", df.dni.alias("user DNI"))
 
-        project = build_tree(df)[0]
+        project = build_graph(df)
         self._expect_project(node=project, expected_column_names=["name", "age", "dni"])
 
         filter_by_city = project.children[0]
