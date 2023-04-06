@@ -84,17 +84,11 @@ def _parse_project(node: JavaObject):
 
 
 def _parse_filter(node: JavaObject) -> Node:
-    for algo in iterate_java_object(node.condition().children()):
-        if algo.nodeName() == "AttributeReference":
-            # print(algo.toJSON())
-            pass
-        elif algo.nodeName() == "Literal":
-            # print(algo.toJSON())
-            pass
+    assert node.children().size() == 1, node.children.size()
 
     return Node(
         type=NodeType.Filter,
-        metadata={},
+        metadata={"condition": node.condition().toString()},
         children=[parse_transformation(node.child())],
     )
 

@@ -19,10 +19,10 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_project(node=project, expected_column_names=["name", "age", "dni"])
 
         filter_by_city = project.children[0]
-        self._expect_filter(node=filter_by_city, expected_condition="city == CABA")
+        self._expect_filter(node=filter_by_city, expected_condition="(city#4 = CABA)")
 
         filter_by_age = filter_by_city.children[0]
-        self._expect_filter(node=filter_by_age, expected_condition="age > 18")
+        self._expect_filter(node=filter_by_age, expected_condition="(age#2 > 18)")
 
         rdd = filter_by_age.children[0]
         self._expect_rdd(node=rdd)
@@ -41,6 +41,10 @@ class PlanParserTestSuite(unittest.TestCase):
 
     def _expect_filter(self, node: Node, expected_condition):
         assert node.type == NodeType.Filter, f'Expected Filter node but "{node.type}" found'
+        
+        filter_metadata = node.metadata
+        assert filter_metadata['condition'] == expected_condition
+
         assert len(node.children) == 1
 
 
