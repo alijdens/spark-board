@@ -10,13 +10,13 @@ class NodeType(enum.Enum):
     Filter = "filter"
     Join = "join"
     Source = "source"
+    LogicalRDD = "logical_rdd"
 
 
 @dataclasses.dataclass
 class Node:
     type: NodeType
     metadata: dict  # TODO: make it more type specific
-    parent: Optional['Node']
     children: List['Node']
 
 
@@ -37,7 +37,7 @@ def parse_transformation(node: JavaObject) -> Node:
     parsers: Dict[str, Callable[[JavaObject], Node]] = {
         "Project": _parse_project,
         "Filter": _parse_filter,
-        # "rdd": _parse_rdd,
+        "LogicalRDD": _parse_logical_rdd,
         # "relation": _parse_relation,
         # "join": _parse_join,
     }
@@ -89,8 +89,18 @@ def _parse_filter(node: JavaObject) -> Node:
         Node(
             type=NodeType.Filter,
             metadata={},
-            parent=None,
             children=parse_transformation(node.child()),
+        )
+    ]
+
+
+def _parse_logical_rdd(node: JavaObject) -> Node:
+    # TODO: collect metadata about RDD columns
+    return [
+        Node(
+            type=NodeType.LogicalRDD,
+            metadata={},
+            children=[],
         )
     ]
 
