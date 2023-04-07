@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from .context import spark, StructType, StructField, StringType
+from .context import spark, StructType, StructField, StringType, F
 from plan_extractor.explain_parser import build_graph, Node, NodeType
 from typing import List
 
 import unittest
 
+
 class PlanParserTestSuite(unittest.TestCase):
     """Plan parser test cases."""
 
-    def test_plan_parser(self):
+    def test_select_and_two_filters(self):
         df = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
         df = df.filter(df.age > 18)
         df = df.filter(df.city == "CABA")
@@ -19,12 +20,26 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_project(node=project, expected_column_names=["name", "age", "dni"])
 
         filter_by_city = project.children[0]
-        self._expect_filter(node=filter_by_city, expected_condition="(city#4 = CABA)")
+        self._expect_filter(node=filter_by_city, expected_condition="(city = 'CABA')")
 
         filter_by_age = filter_by_city.children[0]
-        self._expect_filter(node=filter_by_age, expected_condition="(age#2 > 18)")
+        self._expect_filter(node=filter_by_age, expected_condition="(age > 18)")
 
         rdd = filter_by_age.children[0]
+        self._expect_rdd(node=rdd)
+
+
+    def test_explode(self):
+        df = spark.createDataFrame([], schema="struct<user:string, cars:array<string>>")
+        df = df.withColumn("car", F.explode(df.cars))
+
+        project = build_graph(df)
+        self._expect_project(node=project, expected_column_names=['user', 'cars', 'car'])
+
+        generate = project.children[0]
+        self._expect_generate(node=generate, expected_generator='explode(cars)')
+
+        rdd = generate.children[0]
         self._expect_rdd(node=rdd)
 
 
@@ -51,6 +66,15 @@ class PlanParserTestSuite(unittest.TestCase):
     def _expect_rdd(self, node: Node):
         assert node.type == NodeType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
         assert len(node.children) == 0
+
+
+    def _expect_generate(self, node: Node, expected_generator):
+        assert node.type == NodeType.Generate, f'Expected Generate node but "{node.type}" found'
+
+        generate_metadata = node.metadata
+        assert generate_metadata['generator'] == expected_generator
+
+        assert len(node.children) == 1
 
 
 if __name__ == '__main__':

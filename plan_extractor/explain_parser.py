@@ -11,6 +11,7 @@ class NodeType(enum.Enum):
     Join = "join"
     Source = "source"
     LogicalRDD = "logical_rdd"
+    Generate = "generate"
 
 
 @dataclasses.dataclass
@@ -27,15 +28,18 @@ class Node:
             child.pprint(indent=indent + 1)
 
 
-def build_graph(df: DataFrame) -> Node:
+def _get_last_transformation(df: DataFrame) -> JavaObject:
     # we add a dummy projection of all columns to Spark resolves the next
     # transformations in the plan. Otherwise, the columns will be "unresolved"
     df = df.select("*")
     root = df._jdf.queryExecution().logical()
 
     # skip the 'Project [*]' node
-    first_child = next(iterate_java_object(root.children()))
+    return next(iterate_java_object(root.children()))
 
+
+def build_graph(df: DataFrame) -> Node:
+    first_child = _get_last_transformation(df)
     return parse_transformation(node=first_child)
 
 
@@ -46,6 +50,7 @@ def parse_transformation(node: JavaObject) -> Node:
         "Filter": _parse_filter,
         "LogicalRDD": _parse_logical_rdd,
         "Join": _parse_join,
+        "Generate": _parse_generate,
         # "relation": _parse_relation,
     }
     parse_func = parsers.get(node.nodeName())
@@ -88,17 +93,29 @@ def _parse_filter(node: JavaObject) -> Node:
 
     return Node(
         type=NodeType.Filter,
-        metadata={"condition": node.condition().toString()},
+        metadata={"condition": node.condition().sql()},
         children=[parse_transformation(node.child())],
     )
 
 
 def _parse_logical_rdd(node: JavaObject) -> Node:
+    assert node.children().size() == 0, node.children().size()
+
     # TODO: collect metadata about RDD columns
     return Node(
         type=NodeType.LogicalRDD,
         metadata={},
         children=[],
+    )
+
+
+def _parse_generate(node: JavaObject) -> Node:
+    assert node.children().size() == 1, node.children().size()
+
+    return Node(
+        type=NodeType.Generate,
+        metadata={"generator": node.generator().sql()},
+        children=[parse_transformation(node.child())],
     )
 
 
@@ -108,7 +125,7 @@ def _parse_join(node: JavaObject) -> Node:
 
     return Node(
         type=NodeType.Join,
-        metadata={"condition": node.condition().toString(), "join_type": node.joinType().toString()},
+        metadata={"condition": node.condition().sql(), "join_type": node.joinType().toString()},
         children=[
             parse_transformation(child) for child in iterate_java_object(node.children())
         ],

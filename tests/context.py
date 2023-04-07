@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql import functions as F
 
 sc = SparkContext('local')
 spark = SparkSession(sc)
