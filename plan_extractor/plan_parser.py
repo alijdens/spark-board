@@ -40,7 +40,7 @@ def _get_last_transformation(df: DataFrame) -> JavaObject:
     return next(iterate_java_object(root.children()))
 
 
-def build_graph(df: DataFrame) -> Node:
+def build_tree(df: DataFrame) -> Node:
     first_child = _get_last_transformation(df)
     return parse_transformation(node=first_child)
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .context import spark, StructType, StructField, StringType, F, Window
-from plan_extractor.explain_parser import build_graph, Node, NodeType
+from plan_extractor.plan_parser import build_tree, Node, NodeType
 from typing import List
 
 import unittest
@@ -16,7 +16,7 @@ class PlanParserTestSuite(unittest.TestCase):
         df = df.filter(df.city == "CABA")
         df = df.select("name", "age", df.dni.alias("user DNI"))
 
-        project = build_graph(df)
+        project = build_tree(df)
         self._expect_project(node=project, expected_column_names=["name", "age", "dni"])
 
         filter_by_city = project.children[0]
@@ -33,7 +33,7 @@ class PlanParserTestSuite(unittest.TestCase):
         df = spark.createDataFrame([], schema="struct<user:string, cars:array<string>>")
         df = df.withColumn("car", F.explode(df.cars))
 
-        project = build_graph(df)
+        project = build_tree(df)
         self._expect_project(node=project, expected_column_names=['user', 'cars', 'car'])
 
         generate = project.children[0]
@@ -50,7 +50,7 @@ class PlanParserTestSuite(unittest.TestCase):
             F.avg(df.height).alias("avg_height"),
         )
 
-        aggregate = build_graph(df)
+        aggregate = build_tree(df)
         self._expect_aggregate(node=aggregate,
                                expected_aggregate_expressions=['city', 'sum(children) AS total_children', 'avg(height) AS avg_height'],
                                expected_grouping_expressions=['avg(height) AS avg_height'])
@@ -66,7 +66,7 @@ class PlanParserTestSuite(unittest.TestCase):
         df = people.join(cities, on=["city"])
         df = df.select("name", "age", "city", "zip_code")
 
-        project = build_graph(df)
+        project = build_tree(df)
         self._expect_project(node=project, expected_column_names=['name', 'age', 'city', 'zip_code'])
 
         project = project.children[0]
@@ -96,9 +96,7 @@ class PlanParserTestSuite(unittest.TestCase):
         window = Window.partitionBy().orderBy(df.date).rowsBetween(-3, 0)
         df = df.withColumn("rolling_avg", F.avg(df.revenue).over(window))
 
-        df.explain(True)
-
-        project = build_graph(df)
+        project = build_tree(df)
         self._expect_project(node=project, expected_column_names=['revenue', 'date', 'rolling_avg'])
 
         project = project.children[0]
@@ -121,9 +119,7 @@ class PlanParserTestSuite(unittest.TestCase):
         df = df.withColumn("savings", df.surplus / 2)
         df = df.withColumn("chocolate_money", df.surplus - df.savings)
 
-        df.select("*").explain(True)
-
-        project = build_graph(df)
+        project = build_tree(df)
         self._expect_project(node=project, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings', 'surplus'])
 
         project = project.children[0]
