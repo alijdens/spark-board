@@ -145,7 +145,7 @@ def _parse_join(node: JavaObject) -> Node:
 
     return Node(
         type=NodeType.Join,
-        metadata={"condition": node.condition().sql(), "join_type": node.joinType().toString()},
+        metadata={"condition": node.condition().toString(), "join_type": node.joinType().toString()},
         children=[
             parse_transformation(child) for child in iterate_java_object(node.children())
         ],

@@ -56,6 +56,42 @@ class PlanParserTestSuite(unittest.TestCase):
                                expected_grouping_expressions=['avg(height) AS avg_height'])
 
 
+    def test_join(self):
+        people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
+        cities = spark.createDataFrame([], schema="struct<city:string, zip_code:string, lat:float, lon:float>")
+
+        people = people.filter(people.age > 18)
+        people = people.filter(people.city == "CABA")
+
+        df = people.join(cities, on=["city"])
+        df = df.select("name", "age", "city", "zip_code")
+
+        df.explain(True)
+
+        project = build_graph(df)
+        self._expect_project(node=project, expected_column_names=['name', 'age', 'city', 'zip_code'])
+
+        project = project.children[0]
+        self._expect_project(node=project, expected_column_names=['city', 'dni', 'name', 'age', 'weight', 'zip_code', 'lat', 'lon'])
+
+        inner_join = project.children[0]
+        self._expect_join(node=inner_join,
+                          expected_condition='Some((city#38 = city#44))',
+                          expected_join_type='Inner')
+
+        filter_by_city = inner_join.children[0]
+        self._expect_filter(node=filter_by_city, expected_condition="(city = 'CABA')")
+
+        filter_by_age = filter_by_city.children[0]
+        self._expect_filter(node=filter_by_age, expected_condition="(age > 18)")
+
+        people_rdd = filter_by_age.children[0]
+        self._expect_rdd(node=people_rdd)
+
+        cities_rdd = inner_join.children[1]
+        self._expect_rdd(node=cities_rdd)
+
+
     def _expect_project(self, node: Node, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
@@ -98,6 +134,17 @@ class PlanParserTestSuite(unittest.TestCase):
         assert aggregate_metadata['grouping_expressions'] == expected_grouping_expressions
 
         assert len(node.children) == 1
+
+
+    def _expect_join(self, node: Node, expected_condition, expected_join_type):
+        assert node.type == NodeType.Join, f'Expected Join node but "{node.type}" found'
+
+        join_metadata = node.metadata
+        print(join_metadata)
+        assert join_metadata['condition'] == expected_condition
+        assert join_metadata['join_type'] == expected_join_type
+
+        assert len(node.children) == 2
 
 
 if __name__ == '__main__':
