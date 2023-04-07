@@ -113,6 +113,28 @@ class PlanParserTestSuite(unittest.TestCase):
         rdd = project.children[0]
         self._expect_rdd(node=rdd)
 
+    
+    def test_with_column(self):
+        df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
+
+        df = df.withColumn("surplus", df.income - df.expenses)
+        df = df.withColumn("savings", df.surplus / 2)
+        df = df.withColumn("chocolate_money", df.surplus - df.savings)
+
+        df.select("*").explain(True)
+
+        project = build_graph(df)
+        self._expect_project(node=project, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings', 'surplus'])
+
+        project = project.children[0]
+        self._expect_project(node=project, expected_column_names=['user', 'income', 'expenses', 'surplus', 'surplus'])
+
+        project = project.children[0]
+        self._expect_project(node=project, expected_column_names=['user', 'income', 'expenses', 'income'])
+
+        rdd = project.children[0]
+        self._expect_rdd(node=rdd)
+
 
     def _expect_project(self, node: Node, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
