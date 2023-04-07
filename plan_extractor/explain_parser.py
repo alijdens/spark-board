@@ -12,6 +12,7 @@ class NodeType(enum.Enum):
     Source = "source"
     LogicalRDD = "logical_rdd"
     Generate = "generate"
+    Aggregate = "aggregate"
 
 
 @dataclasses.dataclass
@@ -51,6 +52,7 @@ def parse_transformation(node: JavaObject) -> Node:
         "LogicalRDD": _parse_logical_rdd,
         "Join": _parse_join,
         "Generate": _parse_generate,
+        "Aggregate": _parse_aggregate,
         # "relation": _parse_relation,
     }
     parse_func = parsers.get(node.nodeName())
@@ -115,6 +117,24 @@ def _parse_generate(node: JavaObject) -> Node:
     return Node(
         type=NodeType.Generate,
         metadata={"generator": node.generator().sql()},
+        children=[parse_transformation(node.child())],
+    )
+
+
+def _parse_aggregate(node: JavaObject) -> Node:
+    assert node.children().size() == 1, node.children().size()
+
+    aggregate_expressions = []
+    for aggregate_expression in iterate_java_object(node.aggregateExpressions()):
+        aggregate_expressions.append(aggregate_expression.sql())
+
+    grouping_expressions = []
+    for grouping_expression in iterate_java_object(node.groupingExpressions()):
+        grouping_expressions.append(aggregate_expression.sql())
+
+    return Node(
+        type=NodeType.Aggregate,
+        metadata={'aggregate_expressions': aggregate_expressions, 'grouping_expressions': grouping_expressions},
         children=[parse_transformation(node.child())],
     )
 

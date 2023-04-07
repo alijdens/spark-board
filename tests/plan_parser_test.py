@@ -43,6 +43,19 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd)
 
 
+    def test_group_by(self):
+        df = spark.createDataFrame([], schema="struct<user:string, city:string, children:int, height:double>")
+        df = df.groupBy("city").agg(
+            F.sum(df.children).alias("total_children"),
+            F.avg(df.height).alias("avg_height"),
+        )
+
+        aggregate = build_graph(df)
+        self._expect_aggregate(node=aggregate,
+                               expected_aggregate_expressions=['city', 'sum(children) AS total_children', 'avg(height) AS avg_height'],
+                               expected_grouping_expressions=['avg(height) AS avg_height'])
+
+
     def _expect_project(self, node: Node, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
@@ -73,6 +86,16 @@ class PlanParserTestSuite(unittest.TestCase):
 
         generate_metadata = node.metadata
         assert generate_metadata['generator'] == expected_generator
+
+        assert len(node.children) == 1
+
+
+    def _expect_aggregate(self, node: Node, expected_aggregate_expressions: List, expected_grouping_expressions: List):
+        assert node.type == NodeType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
+
+        aggregate_metadata = node.metadata
+        assert aggregate_metadata['aggregate_expressions'] == expected_aggregate_expressions
+        assert aggregate_metadata['grouping_expressions'] == expected_grouping_expressions
 
         assert len(node.children) == 1
 
