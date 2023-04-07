@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .context import spark, StructType, StructField, StringType, F
+from .context import spark, StructType, StructField, StringType, F, Window
 from plan_extractor.explain_parser import build_graph, Node, NodeType
 from typing import List
 
@@ -66,8 +66,6 @@ class PlanParserTestSuite(unittest.TestCase):
         df = people.join(cities, on=["city"])
         df = df.select("name", "age", "city", "zip_code")
 
-        df.explain(True)
-
         project = build_graph(df)
         self._expect_project(node=project, expected_column_names=['name', 'age', 'city', 'zip_code'])
 
@@ -92,6 +90,30 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=cities_rdd)
 
 
+    def test_window(self):
+        df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
+        # create a 3 day rolling average of the revenue
+        window = Window.partitionBy().orderBy(df.date).rowsBetween(-3, 0)
+        df = df.withColumn("rolling_avg", F.avg(df.revenue).over(window))
+
+        df.explain(True)
+
+        project = build_graph(df)
+        self._expect_project(node=project, expected_column_names=['revenue', 'date', 'rolling_avg'])
+
+        project = project.children[0]
+        self._expect_project(node=project, expected_column_names=['revenue', 'date', 'rolling_avg', 'rolling_avg'])
+
+        window = project.children[0]
+        self._expect_window(node=window)
+
+        project = window.children[0]
+        self._expect_project(node=project, expected_column_names=['revenue', 'date'])
+
+        rdd = project.children[0]
+        self._expect_rdd(node=rdd)
+
+
     def _expect_project(self, node: Node, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
@@ -114,6 +136,9 @@ class PlanParserTestSuite(unittest.TestCase):
 
     def _expect_rdd(self, node: Node):
         assert node.type == NodeType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
+
+        # TODO: assert metadata
+
         assert len(node.children) == 0
 
 
@@ -140,11 +165,18 @@ class PlanParserTestSuite(unittest.TestCase):
         assert node.type == NodeType.Join, f'Expected Join node but "{node.type}" found'
 
         join_metadata = node.metadata
-        print(join_metadata)
         assert join_metadata['condition'] == expected_condition
         assert join_metadata['join_type'] == expected_join_type
 
         assert len(node.children) == 2
+
+
+    def _expect_window(self, node: Node):
+        assert node.type == NodeType.Window, f'Expected Window node but "{node.type}" found'
+        
+        # TODO: assert metadata
+
+        assert len(node.children) == 1
 
 
 if __name__ == '__main__':

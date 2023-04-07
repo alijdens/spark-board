@@ -8,6 +8,7 @@ from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 sc = SparkContext('local')
 spark = SparkSession(sc)

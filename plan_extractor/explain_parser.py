@@ -13,6 +13,7 @@ class NodeType(enum.Enum):
     LogicalRDD = "logical_rdd"
     Generate = "generate"
     Aggregate = "aggregate"
+    Window = "window"
 
 
 @dataclasses.dataclass
@@ -53,6 +54,7 @@ def parse_transformation(node: JavaObject) -> Node:
         "Join": _parse_join,
         "Generate": _parse_generate,
         "Aggregate": _parse_aggregate,
+        "Window": _parse_window,
         # "relation": _parse_relation,
     }
     parse_func = parsers.get(node.nodeName())
@@ -135,6 +137,18 @@ def _parse_aggregate(node: JavaObject) -> Node:
     return Node(
         type=NodeType.Aggregate,
         metadata={'aggregate_expressions': aggregate_expressions, 'grouping_expressions': grouping_expressions},
+        children=[parse_transformation(node.child())],
+    )
+
+
+def _parse_window(node: JavaObject) -> Node:
+    assert node.children().size() == 1, node.children().size()
+
+    # TODO: parse metadata
+
+    return Node(
+        type=NodeType.Window,
+        metadata={},
         children=[parse_transformation(node.child())],
     )
 
