@@ -132,7 +132,7 @@ def _parse_aggregate(node: JavaObject) -> Node:
 
     grouping_expressions = []
     for grouping_expression in iterate_java_object(node.groupingExpressions()):
-        grouping_expressions.append(aggregate_expression.sql())
+        grouping_expressions.append(grouping_expression.sql())
 
     return Node(
         type=NodeType.Aggregate,
