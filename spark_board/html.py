@@ -17,6 +17,7 @@ def dump_dataframe(df: DataFrame) -> None:
         NodeType.Generate: 'Transform',
         NodeType.Aggregate: 'Group',
         NodeType.Join: 'Join',
+        NodeType.Sort: 'Sort',
     }
 
     nodes, links = [], []

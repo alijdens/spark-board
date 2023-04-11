@@ -139,6 +139,9 @@ class PlanParserTestSuite(unittest.TestCase):
         sort = build_tree(df)
         self._expect_sort(node=sort, expected_order=['income ASC NULLS FIRST'])
 
+        rdd = sort.children[0]
+        self._expect_rdd(node=rdd)
+
 
     def _expect_project(self, node: Node, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
