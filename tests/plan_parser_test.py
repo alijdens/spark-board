@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .context import spark, StructType, StructField, StringType, F, Window
-from plan_extractor.plan_parser import build_tree, Node, NodeType
+from spark_board.plan_extractor.plan_parser import build_tree, Node, NodeType
 from typing import List
 
 import unittest
@@ -53,7 +53,7 @@ class PlanParserTestSuite(unittest.TestCase):
         aggregate = build_tree(df)
         self._expect_aggregate(node=aggregate,
                                expected_aggregate_expressions=['city', 'sum(children) AS total_children', 'avg(height) AS avg_height'],
-                               expected_grouping_expressions=['avg(height) AS avg_height'])
+                               expected_grouping_expressions=['city'])
 
 
     def test_join(self):
@@ -111,7 +111,7 @@ class PlanParserTestSuite(unittest.TestCase):
         rdd = project.children[0]
         self._expect_rdd(node=rdd)
 
-    
+
     def test_with_column(self):
         df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
 
@@ -130,6 +130,14 @@ class PlanParserTestSuite(unittest.TestCase):
 
         rdd = project.children[0]
         self._expect_rdd(node=rdd)
+
+
+    def test_order_by(self):
+        df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
+        df = df.orderBy(df.income)
+
+        sort = build_tree(df)
+        self._expect_sort(node=sort, expected_order=['income ASC NULLS FIRST'])
 
 
     def _expect_project(self, node: Node, expected_column_names: List):
@@ -193,6 +201,15 @@ class PlanParserTestSuite(unittest.TestCase):
         assert node.type == NodeType.Window, f'Expected Window node but "{node.type}" found'
         
         # TODO: assert metadata
+
+        assert len(node.children) == 1
+
+
+    def _expect_sort(self, node: Node, expected_order: List):
+        assert node.type == NodeType.Sort, f'Expected Sort node but "{node.type}" found'
+        
+        sort_metadata = node.metadata
+        assert sort_metadata['order'] == expected_order
 
         assert len(node.children) == 1
 

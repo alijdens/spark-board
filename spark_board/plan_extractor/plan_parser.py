@@ -14,6 +14,7 @@ class NodeType(enum.Enum):
     Generate = "generate"
     Aggregate = "aggregate"
     Window = "window"
+    Sort = "sort"
 
 
 @dataclasses.dataclass
@@ -81,6 +82,7 @@ def parse_transformation(node: JavaObject) -> Node:
         "Generate": _parse_generate,
         "Aggregate": _parse_aggregate,
         "Window": _parse_window,
+        "Sort": _parse_sort,
         # "relation": _parse_relation,
     }
     parse_func = parsers.get(node.nodeName())
@@ -189,6 +191,16 @@ def _parse_join(node: JavaObject) -> Node:
         children=[
             parse_transformation(child) for child in iterate_java_object(node.children())
         ],
+    )
+
+
+def _parse_sort(node: JavaObject) -> Node:
+    assert node.children().size() == 1, node.children().size()
+
+    return Node(
+        type=NodeType.Sort,
+        metadata={"order": [c.sql() for c in iterate_java_object(node.order())]},
+        children=[parse_transformation(node.child())],
     )
 
 
