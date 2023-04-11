@@ -1,47 +1,31 @@
 import os
 import json
 
+from .plan_extractor import plan_parser
+from .plan_extractor.plan_parser import NodeType
 from pyspark.sql import DataFrame
-from plan_extractor.extractor import PlanExtractor
 
 
-def dump_dataframe(df:DataFrame) -> None:
-    extractor = PlanExtractor(df=df)
-    tree = extractor.extract()
+def dump_dataframe(df: DataFrame) -> None:
+    tree = plan_parser.build_tree(df=df)
 
-    walker = tree.walk()
-    assert walker.goto_first_child()
-    assert walker.node.type == "'Project [*]\n"
+    # map the Node.type to the type required by the HTML DAG renderer
+    node_type_map = {
+        NodeType.Project: 'Project',
+        NodeType.Filter: 'Filter',
+        NodeType.LogicalRDD: 'Table',
+        NodeType.Generate: 'Transform',
+        NodeType.Aggregate: 'Group',
+        NodeType.Join: 'Join',
+    }
 
-    assert not walker.goto_first_child()
-    assert walker.goto_next_sibling()
-
-    i = 1
     nodes, links = [], []
-    while walker.node.type == 'transformation':
-        assert walker.goto_first_child()
+    for node_id, parent_id, node in tree.dfs():
+        nodes.append({"key": node_id, "type": node_type_map[node.type], "name": node.type.value})
 
-        # skip prefix
-        assert walker.goto_next_sibling()
-
-        if walker.node.type == 'project':
-            nodes.append({"key": i, "type": "Project", "name": "Project"})
-        elif walker.node.type == 'rdd':
-            nodes.append({"key": i, "type": "Table", "name": "RDD"})
-        elif walker.node.type == 'filter':
-            nodes.append({"key": i, "type": "Filter", "name": "Filter"})
-        elif walker.node.type == 'relation':
-            nodes.append({"key": i, "type": "Table", "name": "Table"})
-
-        assert not walker.goto_next_sibling()
-        assert walker.goto_parent()
-
-        if walker.goto_next_sibling():
-            links.append({"from": i + 1, "frompid":"OUT", "to": i, "topid":"L"})
-        else:
-            break
-
-        i += 1
+        # if the parent is None, it means we are at the root of the tree
+        if parent_id is not None:
+            links.append({"from": node_id, "frompid": "OUT", "to": parent_id, "topid": "L"})
 
     here = os.path.dirname(__file__)
     with open(os.path.join(here, 'template.html')) as fp:
