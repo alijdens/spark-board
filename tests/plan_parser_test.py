@@ -134,10 +134,10 @@ class PlanParserTestSuite(unittest.TestCase):
 
     def test_order_by(self):
         df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
-        df = df.orderBy(df.income)
+        df = df.orderBy(df.income, df.expenses.desc())
 
         sort = build_tree(df)
-        self._expect_sort(node=sort, expected_order=['income ASC NULLS FIRST'])
+        self._expect_sort(node=sort, expected_order=['income ASC NULLS FIRST', 'expenses DESC NULLS LAST'])
 
         rdd = sort.children[0]
         self._expect_rdd(node=rdd)
