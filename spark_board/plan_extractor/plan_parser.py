@@ -73,138 +73,169 @@ def build_tree(df: DataFrame) -> Node:
 
 
 def parse_transformation(node: JavaObject) -> Node:
-    # functions that can walk each transformation sub-tree
+    # objects that can parse each transformation sub-tree
     parsers: Dict[str, Callable[[JavaObject], Node]] = {
-        "Project": _parse_project,
-        "Filter": _parse_filter,
-        "LogicalRDD": _parse_logical_rdd,
-        "Join": _parse_join,
-        "Generate": _parse_generate,
-        "Aggregate": _parse_aggregate,
-        "Window": _parse_window,
-        "Sort": _parse_sort,
-        # "relation": _parse_relation,
+        "Project": ProjectParser(),
+        "Filter": FilterParser(),
+        "LogicalRDD": LogicalRDDParser(),
+        "Join": JoinParser(),
+        "Generate": GenerateParser(),
+        "Aggregate": AggregateParser(),
+        "Window": WindowParser(),
+        "Sort": SortParser(),
+        # "relation": RelationParser(),
     }
-    parse_func = parsers.get(node.nodeName())
-    if not parse_func:
+    parser = parsers.get(node.nodeName())
+    if not parser:
         raise NotImplementedError(f"Transformation not supported: '{node.nodeName()}'")
 
-    return parse_func(node)
-
-
-def _parse_project(node: JavaObject):
-    columns = []
-    for col in iterate_java_object(node.projectList()):
-        # TODO: col.dataType() and col.nullable() might be useful too
-        if col.nodeName() == "Alias":
-            alias = col.name()
-
-            reference = col.references().head()
-            referenced_col_name, referenced_col_id = reference.name(), reference.exprId().id()
-
-            columns.append({"alias": alias, "name": referenced_col_name, "id": referenced_col_id})
-        elif col.nodeName() == "AttributeReference":
-            col_name, col_id = col.name(), col.exprId().id()
-            columns.append({"name": col_name, "id": col_id})
-        else:
-            raise NotImplementedError(f"Project column type not supported: {col.nodeName()}")
-
-    # project should only have a single child
-    assert node.children().size() == 1
-
-    return Node(
-        type=NodeType.Project,
-        metadata={"columns": columns},
-        # recursive call to continue the DFS on the transformations tree
-        children=[parse_transformation(node.child())],
-    )
-
-
-def _parse_filter(node: JavaObject) -> Node:
-    assert node.children().size() == 1, node.children.size()
-
-    return Node(
-        type=NodeType.Filter,
-        metadata={"condition": node.condition().sql()},
-        children=[parse_transformation(node.child())],
-    )
-
-
-def _parse_logical_rdd(node: JavaObject) -> Node:
-    assert node.children().size() == 0, node.children().size()
-
-    # TODO: collect metadata about RDD columns
-    return Node(
-        type=NodeType.LogicalRDD,
-        metadata={},
-        children=[],
-    )
-
-
-def _parse_generate(node: JavaObject) -> Node:
-    assert node.children().size() == 1, node.children().size()
-
-    return Node(
-        type=NodeType.Generate,
-        metadata={"generator": node.generator().sql()},
-        children=[parse_transformation(node.child())],
-    )
-
-
-def _parse_aggregate(node: JavaObject) -> Node:
-    assert node.children().size() == 1, node.children().size()
-
-    aggregate_expressions = []
-    for aggregate_expression in iterate_java_object(node.aggregateExpressions()):
-        aggregate_expressions.append(aggregate_expression.sql())
-
-    grouping_expressions = []
-    for grouping_expression in iterate_java_object(node.groupingExpressions()):
-        grouping_expressions.append(grouping_expression.sql())
-
-    return Node(
-        type=NodeType.Aggregate,
-        metadata={'aggregate_expressions': aggregate_expressions, 'grouping_expressions': grouping_expressions},
-        children=[parse_transformation(node.child())],
-    )
-
-
-def _parse_window(node: JavaObject) -> Node:
-    assert node.children().size() == 1, node.children().size()
-
-    # TODO: parse metadata
-
-    return Node(
-        type=NodeType.Window,
-        metadata={},
-        children=[parse_transformation(node.child())],
-    )
-
-
-def _parse_join(node: JavaObject) -> Node:
-    # joins have two children because they combine 2 data frames into 1
-    assert node.children().size() == 2, node.children().size()
-
-    return Node(
-        type=NodeType.Join,
-        metadata={"condition": node.condition().toString(), "join_type": node.joinType().toString()},
-        children=[
-            parse_transformation(child) for child in iterate_java_object(node.children())
-        ],
-    )
-
-
-def _parse_sort(node: JavaObject) -> Node:
-    assert node.children().size() == 1, node.children().size()
-
-    return Node(
-        type=NodeType.Sort,
-        metadata={"order": [c.sql() for c in iterate_java_object(node.order())]},
-        children=[parse_transformation(node.child())],
-    )
+    return parser.parse(node)
 
 
 def iterate_java_object(iterable: JavaObject):
     it = iterable.iterator()
     while it.hasNext():
         yield it.next()
+
+
+class NodeParser(object):
+    def parse(self, node: JavaObject) -> Node:
+        assert node.children().size() == self._expected_number_of_nodes(), node.children().size()
+
+        metadata = {}
+        self._parse_common_metadata(node, metadata)
+        self._parse_metadata(node, metadata)
+
+        return Node(
+            type=self._get_type(),
+            metadata=metadata,
+            children=[parse_transformation(child) for child in iterate_java_object(node.children())],
+        )
+
+    def _parse_common_metadata(self, node: JavaObject, metadata: Dict):
+        metadata["schema_string"] = node.schemaString()
+
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        pass
+
+    def _get_type(self) -> NodeType:
+        raise NotImplementedError("Abstract method")
+
+    def _expected_number_of_nodes(self):
+        raise NotImplementedError("Abstract method")
+
+
+class ProjectParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        columns = []
+        for col in iterate_java_object(node.projectList()):
+            # TODO: col.dataType() and col.nullable() might be useful too
+            if col.nodeName() == "Alias":
+                alias = col.name()
+
+                reference = col.references().head()
+                referenced_col_name, referenced_col_id = reference.name(), reference.exprId().id()
+
+                columns.append({"alias": alias, "name": referenced_col_name, "id": referenced_col_id})
+            elif col.nodeName() == "AttributeReference":
+                col_name, col_id = col.name(), col.exprId().id()
+                columns.append({"name": col_name, "id": col_id})
+            else:
+                raise NotImplementedError(f"Project column type not supported: {col.nodeName()}")
+
+        metadata["columns"] = columns
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Project
+
+    def _expected_number_of_nodes(self):
+        return 1
+
+
+class FilterParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        metadata["condition"] = node.condition().sql()
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Filter
+
+    def _expected_number_of_nodes(self):
+        return 1
+
+
+class LogicalRDDParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        # TODO: collect metadata about RDD columns
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.LogicalRDD
+
+    def _expected_number_of_nodes(self):
+        return 0
+
+
+class JoinParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        metadata["condition"] = node.condition().toString()
+        metadata["join_type"] = node.joinType().toString()
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Join
+
+    def _expected_number_of_nodes(self):
+        return 2
+
+
+class GenerateParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        metadata["generator"] = node.generator().sql()
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Generate
+
+    def _expected_number_of_nodes(self):
+        return 1
+
+
+class AggregateParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        aggregate_expressions = []
+        for aggregate_expression in iterate_java_object(node.aggregateExpressions()):
+            aggregate_expressions.append(aggregate_expression.sql())
+
+        grouping_expressions = []
+        for grouping_expression in iterate_java_object(node.groupingExpressions()):
+            grouping_expressions.append(grouping_expression.sql())
+
+        metadata['aggregate_expressions'] = aggregate_expressions
+        metadata['grouping_expressions'] = grouping_expressions
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Aggregate
+
+    def _expected_number_of_nodes(self):
+        return 1
+
+
+class WindowParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        # TODO: parse metadata
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Window
+
+    def _expected_number_of_nodes(self):
+        return 1
+
+
+class SortParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+        metadata["order"] = [c.sql() for c in iterate_java_object(node.order())]
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Sort
+
+    def _expected_number_of_nodes(self):
+        return 1

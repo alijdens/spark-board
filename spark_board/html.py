@@ -22,7 +22,11 @@ def dump_dataframe(df: DataFrame) -> None:
 
     nodes, links = [], []
     for node_id, parent_id, node in tree.dfs():
-        nodes.append({"key": node_id, "type": node_type_map[node.type], "name": node.type.value})
+        nodes.append({
+            "key": node_id,
+            "type": node_type_map[node.type],
+            "name": node.type.value,
+            "schema_string": node.metadata["schema_string"]})
 
         # if the parent is None, it means we are at the root of the tree
         if parent_id is not None:

@@ -2,7 +2,7 @@ init:
 	pipenv shell
 
 tests:
-	pytest -v tests
+	pytest -vv tests
 
 grammar:
 	cd tree-sitter-spark-explain && tree-sitter generate
