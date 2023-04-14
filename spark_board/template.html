@@ -108,7 +108,15 @@
                                         font: "bold 9pt sans-serif"
                                     },
                                     new go.Binding("text", "name").makeTwoWay())
-                            )
+                            ),
+                            {
+                                // define a tooltip for each node that displays the schema as text
+                                toolTip:
+                                $("ToolTip",
+                                $(go.TextBlock, { margin: 4 },
+                                    new go.Binding("text", "schema_string"))
+                                )
+                            }
                         ),
                         $(go.Panel, "Vertical", {
                                 alignment: go.Spot.Left,
