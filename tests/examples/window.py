@@ -1,4 +1,4 @@
-from context import spark
+from tests.context import spark
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
