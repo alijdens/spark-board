@@ -22,6 +22,7 @@ class Node:
     type: NodeType
     metadata: dict  # TODO: make it more type specific
     children: List['Node']
+    columns: Dict
 
     def pprint(self, indent: int = 0) -> None:
         """Prints a human readable representation of the tree."""
@@ -106,11 +107,51 @@ class NodeParser(object):
         self._parse_common_metadata(node, metadata)
         self._parse_metadata(node, metadata)
 
+        children = [parse_transformation(child) for child in iterate_java_object(node.children())]
+        columns = self._parse_columns(node, children)
+
         return Node(
             type=self._get_type(),
             metadata=metadata,
-            children=[parse_transformation(child) for child in iterate_java_object(node.children())],
+            children=children,
+            columns=columns
         )
+
+    def _get_columns(self, node: JavaObject) -> JavaObject:
+        return node.output()
+
+    def _parse_columns(self, node: JavaObject, children: List) -> Dict:
+        columns = {}
+        for col in iterate_java_object(self._get_columns(node)):
+            ref_id = col.exprId().id()
+
+            parsed_column = self._parse_column(col, children)
+            columns[ref_id] = parsed_column
+
+            for child in children:
+                if ref_id in child.columns:
+                    parsed_column["links"].append(child.columns[ref_id])
+
+        return columns
+
+    def _parse_column(self, col: JavaObject, children: List) -> Dict:
+        if col.nodeName() not in ["Alias", "AttributeReference"]:
+            raise NotImplementedError(f"Project column type not supported: {col.nodeName()}")
+
+        col_name, col_id = col.name(), col.exprId().id()
+        references = [reference.exprId().id() for reference in iterate_java_object(col.references())]
+        print(references)
+        links = []
+        for ref_id in references:
+            for child in children:
+                if ref_id in child.columns:
+                    links.append(child.columns[ref_id])
+        return {
+            "name": col_name,
+            "id": col_id,
+            "type": col.dataType().simpleString(),
+            "links": links
+        }
 
     def _parse_common_metadata(self, node: JavaObject, metadata: Dict):
         metadata["schema_string"] = node.schemaString()
@@ -127,23 +168,11 @@ class NodeParser(object):
 
 class ProjectParser(NodeParser):
     def _parse_metadata(self, node: JavaObject, metadata: Dict):
-        columns = []
-        for col in iterate_java_object(node.projectList()):
-            # TODO: col.dataType() and col.nullable() might be useful too
-            if col.nodeName() == "Alias":
-                alias = col.name()
+        # TODO: Something besides the columns?
+        pass
 
-                reference = col.references().head()
-                referenced_col_name, referenced_col_id = reference.name(), reference.exprId().id()
-
-                columns.append({"alias": alias, "name": referenced_col_name, "id": referenced_col_id})
-            elif col.nodeName() == "AttributeReference":
-                col_name, col_id = col.name(), col.exprId().id()
-                columns.append({"name": col_name, "id": col_id})
-            else:
-                raise NotImplementedError(f"Project column type not supported: {col.nodeName()}")
-
-        metadata["columns"] = columns
+    def _get_columns(self, node: JavaObject) -> JavaObject:
+        return node.projectList()
 
     def _get_type(self) -> NodeType:
         return NodeType.Project
