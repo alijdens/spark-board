@@ -1,25 +1,23 @@
+"""
+Simple script to generate an HTML from the examples included in the tests
+directory.
+"""
+
+import os
+import sys
+import argparse
+from pathlib import Path
 from spark_board import html
 
-from plan_extractor.extractor import PlanExtractor
 
-from pyspark.context import SparkContext
-from pyspark.sql.session import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("example", help="Name of the example to generate")
+    parser.add_argument("--output", help="Name of the output file", default="out.html")
 
+    args = parser.parse_args()
 
-sc = SparkContext('local')
-spark = SparkSession(sc)
-spark.conf.set("spark.sql.debug.maxToStringFields", 1000)
+    # import the example module
+    example = __import__(f"tests.examples.{args.example}", fromlist=["df"])
 
-schema = StructType([
-    StructField("firstname", StringType(),True),
-    StructField("middlename", StringType(),True),
-    StructField("lastname", StringType(),True),
-    StructField("id", StringType(), True),
-    StructField("gender", StringType(), True)
-])
-df = spark.createDataFrame(data=[], schema=schema)
-test_df = df.select("firstname", "lastname").filter(df.gender == "M")
-
-
-html.dump_dataframe(test_df)
+    html.dump_dataframe(example.df, args.output)

@@ -6,7 +6,7 @@ from .plan_extractor.plan_parser import NodeType
 from pyspark.sql import DataFrame
 
 
-def dump_dataframe(df: DataFrame) -> None:
+def dump_dataframe(df: DataFrame, output_name: str) -> None:
     tree = plan_parser.build_tree(df=df)
 
     # map the Node.type to the type required by the HTML DAG renderer
@@ -39,5 +39,5 @@ def dump_dataframe(df: DataFrame) -> None:
     template = template.replace('<<< NODES >>>', json.dumps(nodes))
     template = template.replace('<<< LINKS >>>', json.dumps(links))
 
-    with open(os.path.join('out.html'), 'w') as fp:
+    with open(os.path.join(output_name), 'w') as fp:
         fp.write(template)

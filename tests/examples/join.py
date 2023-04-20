@@ -1,4 +1,4 @@
-from context import spark
+from tests.context import spark
 
 
 people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
