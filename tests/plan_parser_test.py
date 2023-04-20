@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from .context import spark, StructType, StructField, StringType, F, Window
-from spark_board.plan_extractor.plan_parser import build_tree, Node, NodeType
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 from typing import List
+
+from tests.context import spark
+
+from spark_board.plan_extractor.plan_parser import build_tree, Node, NodeType
 
 import unittest
 
@@ -22,7 +29,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- user DNI: integer (nullable = true)\n")
 
         project = build_tree(df)
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=["name", "age", "dni"])
+        self._expect_project(node=project, expected_schema=schema, expected_column_names=["name", "age", "user DNI"])
 
         schema = ("root\n"
                   " |-- dni: integer (nullable = true)\n"
@@ -182,7 +189,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- rolling_avg: double (nullable = true)\n")
 
         project = project.children[0]
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=['revenue', 'date', 'rolling_avg', 'rolling_avg'])
+        self._expect_project(node=project, expected_schema=schema, expected_column_names=['revenue', 'date', 'rolling_avg'])
 
         schema = ("root\n"
                   " |-- revenue: float (nullable = true)\n"
@@ -219,7 +226,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- chocolate_money: double (nullable = true)\n")
 
         project = build_tree(df)
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings', 'surplus'])
+        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings', 'chocolate_money'])
 
         schema = ("root\n"
                   " |-- user: string (nullable = true)\n"
@@ -229,7 +236,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- savings: double (nullable = true)\n")
 
         project = project.children[0]
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus', 'surplus'])
+        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings'])
 
         schema = ("root\n"
                   " |-- user: string (nullable = true)\n"
@@ -238,7 +245,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- surplus: double (nullable = true)\n")
 
         project = project.children[0]
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'income'])
+        self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus'])
 
         schema = ("root\n"
                   " |-- user: string (nullable = true)\n"
@@ -267,7 +274,7 @@ class PlanParserTestSuite(unittest.TestCase):
     def _expect_project(self, node: Node, expected_schema: str, expected_column_names: List):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
-        found_columns = node.metadata['columns']
+        found_columns = node.columns.values()
         found_col_names = [col['name'] for col in found_columns]
         assert expected_column_names == found_col_names
         assert node.metadata['schema_string'] == expected_schema

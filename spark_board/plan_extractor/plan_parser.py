@@ -140,7 +140,6 @@ class NodeParser(object):
 
         col_name, col_id = col.name(), col.exprId().id()
         references = [reference.exprId().id() for reference in iterate_java_object(col.references())]
-        print(references)
         links = []
         for ref_id in references:
             for child in children:
