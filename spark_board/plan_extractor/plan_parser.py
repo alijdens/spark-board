@@ -127,11 +127,6 @@ class NodeParser(object):
 
             parsed_column = self._parse_column(col, children)
             columns[ref_id] = parsed_column
-
-            for child in children:
-                if ref_id in child.columns:
-                    parsed_column["links"].append(child.columns[ref_id])
-
         return columns
 
     def _parse_column(self, col: JavaObject, children: List) -> Dict:
