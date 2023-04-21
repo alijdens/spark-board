@@ -135,3 +135,4 @@ dmypy.json
 spark-warehouse/
 
 out.html
+out/
