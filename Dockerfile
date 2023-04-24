@@ -14,7 +14,7 @@ COPY Pipfile /app/Pipfile
 RUN pipenv lock
 RUN pipenv requirements > requirements.txt
 RUN pip install -r requirements.txt
-RUN pip install ipython
+RUN pip install ipython mypy
 
 COPY . /app/
 
