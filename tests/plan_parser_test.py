@@ -275,7 +275,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
         found_columns = node.columns.values()
-        found_col_names = [col['name'] for col in found_columns]
+        found_col_names = [col.name for col in found_columns]
         assert expected_column_names == found_col_names
         assert node.metadata['schema_string'] == expected_schema
 
