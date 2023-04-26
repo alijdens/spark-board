@@ -18,10 +18,22 @@ class NodeType(enum.Enum):
 
 
 @dataclasses.dataclass
+class NodeColumn(object):
+    name: str
+    id: int
+    type: str
+
+    # List of the columns in previous nodes which form this column. This can be used
+    # to navigate recursively until the data sources and discover its origins.
+    links: List['NodeColumn']
+
+
+@dataclasses.dataclass
 class Node:
     type: NodeType
-    metadata: dict  # TODO: make it more type specific
+    metadata: Dict[str, str]  # TODO: make it more type specific
     children: List['Node']
+    columns: Dict[int, NodeColumn]
 
     def pprint(self, indent: int = 0) -> None:
         """Prints a human readable representation of the tree."""
@@ -39,8 +51,9 @@ class Node:
 
         # counter to assign a unique identifier to each node
         next_node_id = 0
-        parents, nodes = {next_node_id: None}, {next_node_id: self}
-        stack = [next_node_id]
+        parents: Dict[int, Optional[int]] = {next_node_id: None}
+        nodes: Dict[int, Node] = {next_node_id: self}
+        stack: List[int] = [next_node_id]
 
         while stack:
             node_id = stack.pop()
@@ -74,7 +87,7 @@ def build_tree(df: DataFrame) -> Node:
 
 def parse_transformation(node: JavaObject) -> Node:
     # objects that can parse each transformation sub-tree
-    parsers: Dict[str, Callable[[JavaObject], Node]] = {
+    parsers: Dict[str, NodeParser] = {
         "Project": ProjectParser(),
         "Filter": FilterParser(),
         "LogicalRDD": LogicalRDDParser(),
@@ -99,17 +112,56 @@ def iterate_java_object(iterable: JavaObject):
 
 
 class NodeParser(object):
-    def parse(self, node: JavaObject) -> Node:
-        assert node.children().size() == self._expected_number_of_nodes(), node.children().size()
 
-        metadata = {}
-        self._parse_common_metadata(node, metadata)
-        self._parse_metadata(node, metadata)
+    def parse(self, java_node: JavaObject) -> Node:
+        assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
+
+        metadata: Dict[str, str] = {}
+        self._parse_common_metadata(java_node, metadata)
+        self._parse_metadata(java_node, metadata)
+
+        children = [parse_transformation(child) for child in iterate_java_object(java_node.children())]
+        columns = self._parse_columns(java_node, children)
 
         return Node(
             type=self._get_type(),
             metadata=metadata,
-            children=[parse_transformation(child) for child in iterate_java_object(node.children())],
+            children=children,
+            columns=columns
+        )
+
+    def _get_columns(self, java_node: JavaObject) -> JavaObject:
+        return java_node.output()
+
+    def _parse_columns(self, java_node: JavaObject, children: List[Node]) -> Dict[int, NodeColumn]:
+        columns = {}
+        for java_column in iterate_java_object(self._get_columns(java_node)):
+            column_id = java_column.exprId().id()
+            parsed_column = self._parse_column(java_column, children)
+            columns[column_id] = parsed_column
+        return columns
+
+    def _parse_column(self, java_column: JavaObject, children: List[Node]) -> NodeColumn:
+        if java_column.nodeName() not in ["Alias", "AttributeReference"]:
+            raise NotImplementedError(f"Project column type not supported: {java_column.nodeName()}")
+
+        column_name = java_column.name()
+        column_id = java_column.exprId().id()
+        data_type = java_column.dataType().simpleString()
+        reference_ids = [reference.exprId().id() for reference in iterate_java_object(java_column.references())]
+
+        # For each referenced column, search it in the children in order to add a link
+        links = []
+        for ref_id in reference_ids:
+            for child in children:
+                if ref_id in child.columns:
+                    links.append(child.columns[ref_id])
+
+        return NodeColumn(
+            name=column_name,
+            id=column_id,
+            type=data_type,
+            links=links
         )
 
     def _parse_common_metadata(self, node: JavaObject, metadata: Dict):
@@ -127,23 +179,11 @@ class NodeParser(object):
 
 class ProjectParser(NodeParser):
     def _parse_metadata(self, node: JavaObject, metadata: Dict):
-        columns = []
-        for col in iterate_java_object(node.projectList()):
-            # TODO: col.dataType() and col.nullable() might be useful too
-            if col.nodeName() == "Alias":
-                alias = col.name()
+        # TODO: Something besides the columns?
+        pass
 
-                reference = col.references().head()
-                referenced_col_name, referenced_col_id = reference.name(), reference.exprId().id()
-
-                columns.append({"alias": alias, "name": referenced_col_name, "id": referenced_col_id})
-            elif col.nodeName() == "AttributeReference":
-                col_name, col_id = col.name(), col.exprId().id()
-                columns.append({"name": col_name, "id": col_id})
-            else:
-                raise NotImplementedError(f"Project column type not supported: {col.nodeName()}")
-
-        metadata["columns"] = columns
+    def _get_columns(self, node: JavaObject) -> JavaObject:
+        return node.projectList()
 
     def _get_type(self) -> NodeType:
         return NodeType.Project
