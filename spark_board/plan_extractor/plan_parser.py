@@ -22,7 +22,10 @@ class NodeColumn(object):
     name: str
     id: int
     type: str
-    links: List
+
+    # List of the columns in previous nodes which form this column. This can be used
+    # to navigate recursively until the data sources and discover its origins.
+    links: List['NodeColumn']
 
 
 @dataclasses.dataclass
