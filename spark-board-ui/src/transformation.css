@@ -1,0 +1,7 @@
+.transformation-node__container {
+  padding: 0px 10px;
+  min-width: 100px;
+  border-radius: 10px;
+  border: 2px solid black;
+  text-align: center;
+}
