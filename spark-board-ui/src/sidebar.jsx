@@ -27,13 +27,19 @@ function Section(props) {
 }
 
 
-function SideBar({ width, node }) {
+function SideBar({ width, node, selectedColumn, onSelectedColumnChange }) {
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
             <Section title="Output Columns" defaultExpanded="true">
                 {node.data.columns.map((col) => {
-                    return <div key={col.id}>{col.name} ({col.id}) - ({col.type})</div>
+                    return (
+                        <div key={col.id}>
+                            <button onClick={(event) => onSelectedColumnChange(col.id)}>
+                                {col.name} ({col.id}) - ({col.type})
+                            </button>
+                        </div>
+                    )
                 })}
                 <br/><br/>
             </Section>

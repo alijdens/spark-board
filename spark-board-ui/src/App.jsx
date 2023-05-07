@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls } from 'reactflow';
 
 import TransformationNode from './transformation';
@@ -19,14 +19,29 @@ export default function App() {
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
+  const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
+  const [selectedColumn, setSelectedColumn] = React.useState(null)
+
   // register the transformation node type into react-flow
   const nodeTypes = useMemo(() => ({ transformation: TransformationNode }), []);
 
-  const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === selectedNode.id) {
+          node.style = { ...node.style, fontWeight: "bold" };
+        } else {
+          node.style = { ...node.style, fontWeight: "normal" };
+        }
+
+        return node;
+      })
+    );
+  });
 
   return (
     <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-      <SideBar width="400px" node={selectedNode} />
+      <SideBar width="400px" node={selectedNode} selectedColumn={selectedColumn} onSelectedColumnChange={setSelectedColumn} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
