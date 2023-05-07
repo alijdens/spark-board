@@ -17,10 +17,11 @@ export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(model_initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
-
   const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
   const [selectedColumn, setSelectedColumn] = React.useState(null)
+
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  const onNodeClick = useCallback((event, node) => setSelectedNode(node), [setSelectedNode]);
 
   // register the transformation node type into react-flow
   const nodeTypes = useMemo(() => ({ transformation: TransformationNode }), []);
@@ -50,7 +51,7 @@ export default function App() {
         onConnect={onConnect}
         fitView
         nodeTypes={nodeTypes}
-        onNodeClick={(event, node) => setSelectedNode(node)}
+        onNodeClick={onNodeClick}
       >
         <Controls />
         <MiniMap zoomable pannable/>
