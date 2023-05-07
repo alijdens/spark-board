@@ -5,6 +5,7 @@ import json
 from .plan_extractor import plan_parser, dag
 from .plan_extractor.plan_parser import NodeType
 from pyspark.sql import DataFrame
+from typing import Dict
 
 
 # string template to build the JS file containing the graph definition as nodes
@@ -47,9 +48,15 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
         fp.write(model_file)
 
 
-def get_nodes_and_links(tree: plan_parser.Node):
-    """Convert the tree into a list of nodes and links for the HTML DAG."""
+def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
+    return {
+        "id": column.id,
+        "name": column.name,
+        "type": column.type
+    } 
 
+
+def _node_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, positions: Dict[plan_parser.Node, dag.Position]) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
         NodeType.Project: 'Project',
@@ -61,33 +68,44 @@ def get_nodes_and_links(tree: plan_parser.Node):
         NodeType.Sort: 'Sort',
     }
 
+    return {
+        # each node must have a unique ID
+        "id": str(data.node_id),
+        # the type of the node for react-flow to use the correct component
+        "type": "transformation",
+        # data passed to the node upon creation
+        "data": {
+            # store the transformation type
+            "type": node_type_map[node.type],
+            # label to display in the node
+            "label": node_type_map[node.type],
+            # SQL schema of the transformation
+            "schema_string": node.metadata["schema_string"],
+            "columns": [_column_as_dict(column) for column in node.columns.values()]
+        },
+        "position": positions[node],
+    }
+
+
+def _link_to_parent_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) -> Dict[str, object]:
+    return {
+        "id": f"{data.parent_id}-{data.node_id}",
+        "source": str(data.parent_id),
+        "target": str(data.node_id),
+    }
+
+
+def get_nodes_and_links(tree: plan_parser.Node):
+    """Convert the tree into a list of nodes and links for the HTML DAG."""
+
     positions = dag.build_layout(tree)
 
     nodes, links = [], []
     for data, node in dag.dfs(tree):
-        nodes.append({
-            # each node must have a unique ID
-            "id": str(data.node_id),
-            # the type of the node for react-flow to use the correct component
-            "type": "transformation",
-            # data passed to the node upon creation
-            "data": {
-                # store the transformation type
-                "type": node_type_map[node.type],
-                # label to display in the node
-                "label": node_type_map[node.type],
-                # SQL schema of the transformation
-                "schema_string": node.metadata["schema_string"],
-            },
-            "position": positions[node],
-        })
+        nodes.append(_node_as_dict(data, node, positions))
 
         # if the parent is None, it means we are at the root of the tree
         if data.parent_id is not None:
-            links.append({
-                "id": f"{data.parent_id}-{data.node_id}",
-                "source": str(data.parent_id),
-                "target": str(data.node_id),
-            })
+            links.append(_link_to_parent_as_dict(data, node))
 
     return nodes, links
