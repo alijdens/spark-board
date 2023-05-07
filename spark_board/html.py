@@ -2,9 +2,24 @@ import os
 import shutil
 import json
 
-from .plan_extractor import plan_parser
+from .plan_extractor import plan_parser, dag
 from .plan_extractor.plan_parser import NodeType
 from pyspark.sql import DataFrame
+
+
+# string template to build the JS file containing the graph definition as nodes
+# and links objects required by the framework that will draw them
+MODEL_FILE_TEMPLATE = """
+const model_initialNodes = {nodes};
+
+const model_initialEdges = {links};
+"""
+
+class Encoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, dag.Position):
+            return {"x": o.x, "y": o.y}
+        return json.JSONEncoder.default(self, o)    
 
 
 def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
@@ -15,26 +30,21 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
     tree = plan_parser.build_tree(df=df)
     nodes, links = get_nodes_and_links(tree)
 
-    # open the index.html template to later replace the nodes and links
-    # in the placeholders
-    here = os.path.dirname(__file__)
-    with open(os.path.join(here, "ui", "index.html")) as fp:
-        template = fp.read()
-
-    # replace the placeholders with the actual data
-    template = template.replace('"<<< NODES >>>"', json.dumps(nodes))
-    template = template.replace('"<<< LINKS >>>"', json.dumps(links))
+    model_file = MODEL_FILE_TEMPLATE.format(
+        nodes=json.dumps(nodes, indent=4, cls=Encoder),
+        links=json.dumps(links, indent=4),
+    )
 
     if overwrite and os.path.exists(output_dir):
         shutil.rmtree(output_dir)
 
     # copy the ui directory to the output directory
+    here = os.path.dirname(__file__)
     shutil.copytree(os.path.join(here, "ui"), output_dir)
 
-    # save the new index.html in the output directory but with the data
-    # replaced
-    with open(os.path.join(output_dir, "index.html"), 'w') as fp:
-        fp.write(template)
+    # create the output file with the model data
+    with open(os.path.join(output_dir, "model.js"), "w") as fp:
+        fp.write(model_file)
 
 
 def get_nodes_and_links(tree: plan_parser.Node):
@@ -51,16 +61,33 @@ def get_nodes_and_links(tree: plan_parser.Node):
         NodeType.Sort: 'Sort',
     }
 
+    positions = dag.build_layout(tree)
+
     nodes, links = [], []
-    for node_id, parent_id, node in tree.dfs():
+    for data, node in dag.dfs(tree):
         nodes.append({
-            "key": node_id,
-            "type": node_type_map[node.type],
-            "name": node.type.value,
-            "schema_string": node.metadata["schema_string"]})
+            # each node must have a unique ID
+            "id": str(data.node_id),
+            # the type of the node for react-flow to use the correct component
+            "type": "transformation",
+            # data passed to the node upon creation
+            "data": {
+                # store the transformation type
+                "type": node_type_map[node.type],
+                # label to display in the node
+                "label": node_type_map[node.type],
+                # SQL schema of the transformation
+                "schema_string": node.metadata["schema_string"],
+            },
+            "position": positions[node],
+        })
 
         # if the parent is None, it means we are at the root of the tree
-        if parent_id is not None:
-            links.append({"from": node_id, "frompid": "OUT", "to": parent_id, "topid": "L"})
+        if data.parent_id is not None:
+            links.append({
+                "id": f"{data.parent_id}-{data.node_id}",
+                "source": str(data.parent_id),
+                "target": str(data.node_id),
+            })
 
     return nodes, links

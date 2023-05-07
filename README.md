@@ -33,3 +33,7 @@ In order to run the examples you can execute the following command:
 ```shell
 python ./run.py [example_name] --output out.html
 ```
+
+## Working with the UI
+
+The visual part of the package is developed in React (see [spark-board-ui](./spark-board-ui/)). If want to update the visualization, follow the steps in the [README](./spark-board-ui/README.md) and then create a new commit replacing the [compiled `ui`](./spark_board/ui/) files by the new ones.

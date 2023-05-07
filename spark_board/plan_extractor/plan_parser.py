@@ -2,7 +2,7 @@ import enum
 import dataclasses
 from py4j.java_gateway import JavaObject
 from pyspark.sql import DataFrame
-from typing import List, Dict, Callable, Generator, Tuple, Optional
+from typing import List, Dict
 
 
 class NodeType(enum.Enum):
@@ -35,39 +35,21 @@ class Node:
     children: List['Node']
     columns: Dict[int, NodeColumn]
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Node):
+            return False
+
+        return self.type == other.type and self.metadata == other.metadata and self.children == other.children
+
+    def __hash__(self) -> int:
+        return hash(id(self))
+
     def pprint(self, indent: int = 0) -> None:
         """Prints a human readable representation of the tree."""
 
         print("  " * indent + f"{self.type.name} {self.metadata}")
         for child in self.children:
             child.pprint(indent=indent + 1)
-
-    def dfs(self) -> Generator[Tuple[int, Optional[int], 'Node'], None, None]:
-        """Returns a generator that iterates over the tree in depth-first order.
-        Each element yielded by the generator is a tuple of (node_id, parent_id, node).
-        The `node_id` is a unique identifier of the node, `parent_id` is the identifier
-        of the parent node, and `node` is the node itself.
-        Note that, for the root node only, the `parent_id` is None."""
-
-        # counter to assign a unique identifier to each node
-        next_node_id = 0
-        parents: Dict[int, Optional[int]] = {next_node_id: None}
-        nodes: Dict[int, Node] = {next_node_id: self}
-        stack: List[int] = [next_node_id]
-
-        while stack:
-            node_id = stack.pop()
-
-            # yield the node ID, its parent ID, and the node itself
-            yield node_id, parents[node_id], nodes[node_id]
-
-            # push all children to the stack in order to iterate them later
-            # we assume this is a tree, so no cycles should happen here
-            for child in nodes[node_id].children:
-                next_node_id += 1
-                nodes[next_node_id] = child
-                parents[next_node_id] = node_id
-                stack.append(next_node_id)
 
 
 def _get_last_transformation(df: DataFrame) -> JavaObject:
