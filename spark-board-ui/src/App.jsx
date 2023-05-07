@@ -2,9 +2,11 @@ import React, { useMemo, useCallback } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls } from 'reactflow';
 
 import TransformationNode from './transformation';
+import SideBar from './sidebar';
 
 import 'reactflow/dist/style.css';
 import './transformation.css';
+import './App.css'
 
 export default function App() {
   // model_initialNodes and model_initialEdges are defined in model.js, which is
@@ -20,8 +22,11 @@ export default function App() {
   // register the transformation node type into react-flow
   const nodeTypes = useMemo(() => ({ transformation: TransformationNode }), []);
 
+  const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
+
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
+      <SideBar width="400px" node={selectedNode} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -30,6 +35,7 @@ export default function App() {
         onConnect={onConnect}
         fitView
         nodeTypes={nodeTypes}
+        onNodeClick={(event, node) => setSelectedNode(node)}
       >
         <Controls />
         <MiniMap zoomable pannable/>

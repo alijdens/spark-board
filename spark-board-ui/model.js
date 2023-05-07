@@ -13,14 +13,27 @@ const model_initialNodes = [
         "deletable": false,
         "position": {"x": 0, "y": 0},
         "type": "transformation",
-        "data": {"type": "Project", "label": "Project"},
+        "data": {
+            "type": "Project", "label": "Project", 
+            "columns": [
+                {"name": "Column 1", "id": 1, "type": "string"}, 
+                {"name": "Column 2", "id": 2, "type": "integer"},
+            ]
+        }
     },
     {
         "id": "2",
         "deletable": false,
         "position": {"x": 1000, "y": 0},
         "type": "transformation",
-        "data": {"type": "Filter", "label": "Filter"},
+        "data": {
+            "type": "Filter", "label": "Filter",
+            "columns": [
+                {"name": "Column 3", "id": 3, "type": "string"},
+                {"name": "Column 4", "id": 4, "type": "integer"},
+                {"name": "Column 5", "id": 5, "type": "boolean"},
+            ]
+        }
     },
 ];
 
