@@ -18,10 +18,13 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
   const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
-  const [selectedColumn, setSelectedColumn] = React.useState(null)
+  const [selectedColumn, setSelectedColumn] = React.useState(undefined)
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
-  const onNodeClick = useCallback((event, node) => setSelectedNode(node), [setSelectedNode]);
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+    setSelectedColumn(undefined);
+  }, [setSelectedNode]);
 
   // register the transformation node type into react-flow
   const nodeTypes = useMemo(() => ({ transformation: TransformationNode }), []);
@@ -30,15 +33,19 @@ export default function App() {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === selectedNode.id) {
+          console.log("Selected node: ", node);
+          console.log("Selected column: ", selectedColumn);
           node.style = { ...node.style, fontWeight: "bold" };
+          node.data.selectedColumn = selectedColumn;
         } else {
           node.style = { ...node.style, fontWeight: "normal" };
+          node.data.selectedColumn = undefined;
         }
 
         return node;
       })
     );
-  });
+  }, [selectedNode, selectedColumn]);
 
   return (
     <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
