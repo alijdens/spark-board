@@ -48,9 +48,13 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
         fp.write(model_file)
 
 
+def _get_column_id(column: plan_parser.NodeColumn) -> str:
+    return f"{str(column.node_id)}->{str(column.id)}"
+
+
 def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
     return {
-        "id": f"{str(column.node_id)}->{str(column.id)}",
+        "id": _get_column_id(column),
         "type": "column",
         "parentNode": str(column.node_id),
         "extent": "parent",
@@ -59,6 +63,7 @@ def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
             "id": column.id,
             "name": column.name,
             "type": column.type,
+            "linked_columns": [_get_column_id(link) for link in column.links]
         },
         "position": {"x": 15, "y": 25}
     } 

@@ -8,9 +8,10 @@
  */
 
 
+
 const model_initialNodes = [
     {
-        "id": "140719047918544",
+        "id": "140251708310864",
         "type": "transformation",
         "data": {
             "type": "Project",
@@ -18,15 +19,18 @@ const model_initialNodes = [
             "schema_string": "root\n |-- user: string (nullable = true)\n |-- cars: array (nullable = true)\n |    |-- element: string (containsNull = true)\n |-- car: string (nullable = true)\n",
             "columns": [
                 {
-                    "id": "140719047918544->0",
+                    "id": "140251708310864->0",
                     "type": "column",
-                    "parentNode": "140719047918544",
+                    "parentNode": "140251708310864",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 0,
                         "name": "user",
-                        "type": "string"
+                        "type": "string",
+                        "linked_columns": [
+                            "140251708317584->0"
+                        ]
                     },
                     "position": {
                         "x": 15,
@@ -34,15 +38,18 @@ const model_initialNodes = [
                     }
                 },
                 {
-                    "id": "140719047918544->1",
+                    "id": "140251708310864->1",
                     "type": "column",
-                    "parentNode": "140719047918544",
+                    "parentNode": "140251708310864",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 1,
                         "name": "cars",
-                        "type": "array<string>"
+                        "type": "array<string>",
+                        "linked_columns": [
+                            "140251708317584->1"
+                        ]
                     },
                     "position": {
                         "x": 15,
@@ -50,15 +57,18 @@ const model_initialNodes = [
                     }
                 },
                 {
-                    "id": "140719047918544->5",
+                    "id": "140251708310864->5",
                     "type": "column",
-                    "parentNode": "140719047918544",
+                    "parentNode": "140251708310864",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 5,
                         "name": "car",
-                        "type": "string"
+                        "type": "string",
+                        "linked_columns": [
+                            "140251708317584->5"
+                        ]
                     },
                     "position": {
                         "x": 15,
@@ -73,7 +83,7 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047925264",
+        "id": "140251708317584",
         "type": "transformation",
         "data": {
             "type": "Transform",
@@ -81,15 +91,18 @@ const model_initialNodes = [
             "schema_string": "root\n |-- user: string (nullable = true)\n |-- cars: array (nullable = true)\n |    |-- element: string (containsNull = true)\n |-- car: string (nullable = true)\n",
             "columns": [
                 {
-                    "id": "140719047925264->0",
+                    "id": "140251708317584->0",
                     "type": "column",
-                    "parentNode": "140719047925264",
+                    "parentNode": "140251708317584",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 0,
                         "name": "user",
-                        "type": "string"
+                        "type": "string",
+                        "linked_columns": [
+                            "140251708318544->0"
+                        ]
                     },
                     "position": {
                         "x": 15,
@@ -97,15 +110,18 @@ const model_initialNodes = [
                     }
                 },
                 {
-                    "id": "140719047925264->1",
+                    "id": "140251708317584->1",
                     "type": "column",
-                    "parentNode": "140719047925264",
+                    "parentNode": "140251708317584",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 1,
                         "name": "cars",
-                        "type": "array<string>"
+                        "type": "array<string>",
+                        "linked_columns": [
+                            "140251708318544->1"
+                        ]
                     },
                     "position": {
                         "x": 15,
@@ -113,15 +129,16 @@ const model_initialNodes = [
                     }
                 },
                 {
-                    "id": "140719047925264->5",
+                    "id": "140251708317584->5",
                     "type": "column",
-                    "parentNode": "140719047925264",
+                    "parentNode": "140251708317584",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 5,
                         "name": "car",
-                        "type": "string"
+                        "type": "string",
+                        "linked_columns": []
                     },
                     "position": {
                         "x": 15,
@@ -136,7 +153,7 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047926224",
+        "id": "140251708318544",
         "type": "transformation",
         "data": {
             "type": "Table",
@@ -144,15 +161,16 @@ const model_initialNodes = [
             "schema_string": "root\n |-- user: string (nullable = true)\n |-- cars: array (nullable = true)\n |    |-- element: string (containsNull = true)\n",
             "columns": [
                 {
-                    "id": "140719047926224->0",
+                    "id": "140251708318544->0",
                     "type": "column",
-                    "parentNode": "140719047926224",
+                    "parentNode": "140251708318544",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 0,
                         "name": "user",
-                        "type": "string"
+                        "type": "string",
+                        "linked_columns": []
                     },
                     "position": {
                         "x": 15,
@@ -160,15 +178,16 @@ const model_initialNodes = [
                     }
                 },
                 {
-                    "id": "140719047926224->1",
+                    "id": "140251708318544->1",
                     "type": "column",
-                    "parentNode": "140719047926224",
+                    "parentNode": "140251708318544",
                     "extent": "parent",
                     "expandParent": true,
                     "data": {
                         "id": 1,
                         "name": "cars",
-                        "type": "array<string>"
+                        "type": "array<string>",
+                        "linked_columns": []
                     },
                     "position": {
                         "x": 15,
@@ -183,15 +202,18 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047918544->0",
+        "id": "140251708310864->0",
         "type": "column",
-        "parentNode": "140719047918544",
+        "parentNode": "140251708310864",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 0,
             "name": "user",
-            "type": "string"
+            "type": "string",
+            "linked_columns": [
+                "140251708317584->0"
+            ]
         },
         "position": {
             "x": 15,
@@ -199,15 +221,18 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047918544->1",
+        "id": "140251708310864->1",
         "type": "column",
-        "parentNode": "140719047918544",
+        "parentNode": "140251708310864",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 1,
             "name": "cars",
-            "type": "array<string>"
+            "type": "array<string>",
+            "linked_columns": [
+                "140251708317584->1"
+            ]
         },
         "position": {
             "x": 15,
@@ -215,15 +240,18 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047918544->5",
+        "id": "140251708310864->5",
         "type": "column",
-        "parentNode": "140719047918544",
+        "parentNode": "140251708310864",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 5,
             "name": "car",
-            "type": "string"
+            "type": "string",
+            "linked_columns": [
+                "140251708317584->5"
+            ]
         },
         "position": {
             "x": 15,
@@ -231,15 +259,18 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047925264->0",
+        "id": "140251708317584->0",
         "type": "column",
-        "parentNode": "140719047925264",
+        "parentNode": "140251708317584",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 0,
             "name": "user",
-            "type": "string"
+            "type": "string",
+            "linked_columns": [
+                "140251708318544->0"
+            ]
         },
         "position": {
             "x": 15,
@@ -247,15 +278,18 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047925264->1",
+        "id": "140251708317584->1",
         "type": "column",
-        "parentNode": "140719047925264",
+        "parentNode": "140251708317584",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 1,
             "name": "cars",
-            "type": "array<string>"
+            "type": "array<string>",
+            "linked_columns": [
+                "140251708318544->1"
+            ]
         },
         "position": {
             "x": 15,
@@ -263,15 +297,16 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047925264->5",
+        "id": "140251708317584->5",
         "type": "column",
-        "parentNode": "140719047925264",
+        "parentNode": "140251708317584",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 5,
             "name": "car",
-            "type": "string"
+            "type": "string",
+            "linked_columns": []
         },
         "position": {
             "x": 15,
@@ -279,15 +314,16 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047926224->0",
+        "id": "140251708318544->0",
         "type": "column",
-        "parentNode": "140719047926224",
+        "parentNode": "140251708318544",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 0,
             "name": "user",
-            "type": "string"
+            "type": "string",
+            "linked_columns": []
         },
         "position": {
             "x": 15,
@@ -295,15 +331,16 @@ const model_initialNodes = [
         }
     },
     {
-        "id": "140719047926224->1",
+        "id": "140251708318544->1",
         "type": "column",
-        "parentNode": "140719047926224",
+        "parentNode": "140251708318544",
         "extent": "parent",
         "expandParent": true,
         "data": {
             "id": 1,
             "name": "cars",
-            "type": "array<string>"
+            "type": "array<string>",
+            "linked_columns": []
         },
         "position": {
             "x": 15,
@@ -314,38 +351,38 @@ const model_initialNodes = [
 
 const model_initialEdges = [
     {
-        "id": "140719047925264-140719047925264",
-        "source": "140719047918544",
-        "target": "140719047925264"
+        "id": "140251708317584-140251708317584",
+        "source": "140251708310864",
+        "target": "140251708317584"
     },
     {
-        "id": "140719047926224-140719047926224",
-        "source": "140719047925264",
-        "target": "140719047926224"
+        "id": "140251708318544-140251708318544",
+        "source": "140251708317584",
+        "target": "140251708318544"
     },
     {
-        "id": "(140719047918544->0)-(140719047925264->0)",
-        "source": "140719047918544->0",
-        "target": "140719047925264->0"
+        "id": "(140251708310864->0)-(140251708317584->0)",
+        "source": "140251708310864->0",
+        "target": "140251708317584->0"
     },
     {
-        "id": "(140719047918544->1)-(140719047925264->1)",
-        "source": "140719047918544->1",
-        "target": "140719047925264->1"
+        "id": "(140251708310864->1)-(140251708317584->1)",
+        "source": "140251708310864->1",
+        "target": "140251708317584->1"
     },
     {
-        "id": "(140719047918544->5)-(140719047925264->5)",
-        "source": "140719047918544->5",
-        "target": "140719047925264->5"
+        "id": "(140251708310864->5)-(140251708317584->5)",
+        "source": "140251708310864->5",
+        "target": "140251708317584->5"
     },
     {
-        "id": "(140719047925264->0)-(140719047926224->0)",
-        "source": "140719047925264->0",
-        "target": "140719047926224->0"
+        "id": "(140251708317584->0)-(140251708318544->0)",
+        "source": "140251708317584->0",
+        "target": "140251708318544->0"
     },
     {
-        "id": "(140719047925264->1)-(140719047926224->1)",
-        "source": "140719047925264->1",
-        "target": "140719047926224->1"
+        "id": "(140251708317584->1)-(140251708318544->1)",
+        "source": "140251708317584->1",
+        "target": "140251708318544->1"
     }
 ];
