@@ -40,7 +40,10 @@ function TransformationNode({ data }) {
             <div className="transformation-node__container" style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
-                <p>{ data.selectedColumn }</p>
+                {
+                    // TODO: Foreach non-hidden column
+                    <br />
+                }
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>

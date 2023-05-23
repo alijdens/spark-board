@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, useEffect } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls } from 'reactflow';
 
 import TransformationNode from './transformation';
+import ColumnNode from './column';
 import SideBar from './sidebar';
 
 import 'reactflow/dist/style.css';
@@ -18,28 +19,46 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
   const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
-  const [selectedColumn, setSelectedColumn] = React.useState(undefined)
+  const [selectedColumn, setSelectedColumn] = React.useState(undefined);
+  const [columnTracking, setColumnTracking] = React.useState([]);
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
   const onNodeClick = useCallback((event, node) => {
-    setSelectedNode(node);
-    setSelectedColumn(undefined);
+    if (node.type == "transformation") {
+      console.log(node);
+      console.log(event);
+      setSelectedNode(node);
+      setSelectedColumn(undefined);
+      setColumnTracking([]);
+    }
   }, [setSelectedNode]);
 
   // register the transformation node type into react-flow
-  const nodeTypes = useMemo(() => ({ transformation: TransformationNode }), []);
+  const nodeTypes = useMemo(() => ({
+    transformation: TransformationNode,
+    column: ColumnNode
+  }), []);
 
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
-        if (node.id === selectedNode.id) {
-          console.log("Selected node: ", node);
-          console.log("Selected column: ", selectedColumn);
-          node.style = { ...node.style, fontWeight: "bold" };
-          node.data.selectedColumn = selectedColumn;
+        if (node.type == "transformation") {
+          if (node.id === selectedNode.id) {
+            node.style = { ...node.style, fontWeight: "bold" };
+            node.data.selectedColumn = selectedColumn;
+          } else {
+            node.style = { ...node.style, fontWeight: "normal" };
+            node.data.selectedColumn = undefined;
+          }
         } else {
-          node.style = { ...node.style, fontWeight: "normal" };
-          node.data.selectedColumn = undefined;
+          if (node.id === selectedColumn) {
+            console.log("On selected column, node is:", node);
+            node.style = { ...node.style };
+            node.data.hidden = false;
+          } else {
+            node.style = { ...node.style };
+            node.data.hidden = true;
+          }
         }
 
         return node;
