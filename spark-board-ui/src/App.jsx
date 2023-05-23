@@ -49,7 +49,10 @@ export default function App() {
 
   return (
     <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-      <SideBar width="400px" node={selectedNode} selectedColumn={selectedColumn} onSelectedColumnChange={setSelectedColumn} />
+      <SideBar width="400px" node={selectedNode} selectedColumn={selectedColumn} onSelectedColumnChange={(column) => {
+        setSelectedColumn(column.id);
+        console.log(column);
+      }} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -59,6 +62,7 @@ export default function App() {
         fitView
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
+        hidden={false}
       >
         <Controls />
         <MiniMap zoomable pannable/>
