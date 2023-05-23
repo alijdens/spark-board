@@ -5,6 +5,7 @@ import json
 from .plan_extractor import plan_parser, dag
 from .plan_extractor.plan_parser import NodeType
 from pyspark.sql import DataFrame
+from typing import Dict
 
 
 # string template to build the JS file containing the graph definition as nodes
@@ -47,9 +48,23 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
         fp.write(model_file)
 
 
-def get_nodes_and_links(tree: plan_parser.Node):
-    """Convert the tree into a list of nodes and links for the HTML DAG."""
+def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
+    return {
+        "id": f"{str(column.node_id)}->{str(column.id)}",
+        "type": "column",
+        "parentNode": str(column.node_id),
+        "extent": "parent",
+        "expandParent": True,
+        "data": {
+            "id": column.id,
+            "name": column.name,
+            "type": column.type,
+        },
+        "position": {"x": 15, "y": 25}
+    } 
 
+
+def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, positions: Dict[plan_parser.Node, dag.Position]) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
         NodeType.Project: 'Project',
@@ -61,33 +76,58 @@ def get_nodes_and_links(tree: plan_parser.Node):
         NodeType.Sort: 'Sort',
     }
 
+    return {
+        # each node must have a unique ID
+        "id": str(node.id),
+        # the type of the node for react-flow to use the correct component
+        "type": "transformation",
+        # data passed to the node upon creation
+        "data": {
+            # store the transformation type
+            "type": node_type_map[node.type],
+            # label to display in the node
+            "label": node_type_map[node.type],
+            # SQL schema of the transformation
+            "schema_string": node.metadata["schema_string"],
+            "columns": [_column_as_dict(column) for column in node.columns.values()]
+        },
+        "position": positions[node],
+    }
+
+
+def _transofmations_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) -> Dict[str, object]:
+    return {
+        "id": f"{node.id}-{node.id}",
+        "source": str(data.parent_id),
+        "target": str(node.id),
+    }
+
+
+def _column_link_as_dict(source_column, target_column):
+    source = f"{str(source_column.node_id)}->{str(source_column.id)}"
+    target = f"{str(target_column.node_id)}->{str(target_column.id)}"
+    return {
+        "id": f"({source})-({target})",
+        "source": source,
+        "target": target
+    }
+
+
+def get_nodes_and_links(tree: plan_parser.Node):
+    """Convert the tree into a list of nodes and links for the HTML DAG."""
+
     positions = dag.build_layout(tree)
 
-    nodes, links = [], []
+    transformation_nodes, transformation_links, column_nodes, column_links = [], [], [], []
     for data, node in dag.dfs(tree):
-        nodes.append({
-            # each node must have a unique ID
-            "id": str(data.node_id),
-            # the type of the node for react-flow to use the correct component
-            "type": "transformation",
-            # data passed to the node upon creation
-            "data": {
-                # store the transformation type
-                "type": node_type_map[node.type],
-                # label to display in the node
-                "label": node_type_map[node.type],
-                # SQL schema of the transformation
-                "schema_string": node.metadata["schema_string"],
-            },
-            "position": positions[node],
-        })
-
+        transformation_nodes.append(_transformation_as_dict(data, node, positions))
         # if the parent is None, it means we are at the root of the tree
         if data.parent_id is not None:
-            links.append({
-                "id": f"{data.parent_id}-{data.node_id}",
-                "source": str(data.parent_id),
-                "target": str(data.node_id),
-            })
+            transformation_links.append(_transofmations_link_as_dict(data, node))
 
-    return nodes, links
+        for column in node.columns.values():
+            column_nodes.append(_column_as_dict(column))
+            for link in column.links:
+                column_links.append(_column_link_as_dict(column, link))
+
+    return transformation_nodes + column_nodes, transformation_links + column_links

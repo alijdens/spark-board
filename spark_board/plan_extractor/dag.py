@@ -6,10 +6,7 @@ from .plan_parser import Node
 
 @dataclasses.dataclass
 class DFSNodeData:
-    # unique identifier of the node in the context of the DFS
-    node_id: int
-
-    # identifier of the parent node in the context of the DFS
+    # identifier of the parent node
     # Note that, for the root node only, the `parent_id` is None
     parent_id: Optional[int]
 
@@ -31,19 +28,16 @@ def dfs(root: Node) -> Generator[Tuple[DFSNodeData, Node], None, None]:
     """Returns a generator that iterates over the tree in depth-first order.
     Each element yielded by the generator is a tuple of (DFSNodeData, node)."""
 
-    # counter to assign a unique identifier to each node
-    next_node_id = 0
-    parents: Dict[int, Optional[int]] = {next_node_id: None}
-    nodes: Dict[int, Node] = {next_node_id: root}
-    stack: List[int] = [next_node_id]
-    depths: Dict[int, int] = {next_node_id: 0}
+    parents: Dict[int, Optional[int]] = {root.id: None}
+    nodes: Dict[int, Node] = {root.id: root}
+    stack: List[int] = [root.id]
+    depths: Dict[int, int] = {root.id: 0}
 
     while stack:
         node_id = stack.pop()
 
         # yield the node data and the node itself
         data = DFSNodeData(
-            node_id=node_id,
             parent_id=parents[node_id],
             parent=nodes[parents[node_id]] if parents[node_id] is not None else None,
             depth=depths[node_id],
@@ -53,12 +47,11 @@ def dfs(root: Node) -> Generator[Tuple[DFSNodeData, Node], None, None]:
         # push all children to the stack in order to iterate them later
         # we assume this is a tree, so no cycles should happen here
         for child in nodes[node_id].children:
-            next_node_id += 1
-            nodes[next_node_id] = child
-            parents[next_node_id] = node_id
-            depths[next_node_id] = depths[node_id] + 1
+            nodes[child.id] = child
+            parents[child.id] = node_id
+            depths[child.id] = depths[node_id] + 1
 
-            stack.append(next_node_id)
+            stack.append(child.id)
 
 
 # TODO: Check what needs to be parameterized, and eventually analyze if it should be
