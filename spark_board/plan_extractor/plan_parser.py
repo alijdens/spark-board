@@ -22,6 +22,7 @@ class NodeColumn(object):
     name: str
     id: int
     type: str
+    node_id: int
 
     # List of the columns in previous nodes which form this column. This can be used
     # to navigate recursively until the data sources and discover its origins.
@@ -30,6 +31,7 @@ class NodeColumn(object):
 
 @dataclasses.dataclass
 class Node:
+    id: int
     type: NodeType
     metadata: Dict[str, str]  # TODO: make it more type specific
     children: List['Node']
@@ -106,6 +108,7 @@ class NodeParser(object):
         columns = self._parse_columns(java_node, children)
 
         return Node(
+            id=id(self),
             type=self._get_type(),
             metadata=metadata,
             children=children,
@@ -143,6 +146,7 @@ class NodeParser(object):
             name=column_name,
             id=column_id,
             type=data_type,
+            node_id=id(self),
             links=links
         )
 
