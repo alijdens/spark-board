@@ -17,7 +17,7 @@ import unittest
 class PlanParserTestSuite(unittest.TestCase):
     """Plan parser test cases."""
 
-    def test_select_and_two_filters(self):
+    def test_select_and_two_filters(self) -> None:
         df = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
         df = df.filter(df.age > 18)
         df = df.filter(df.city == "CABA")
@@ -48,7 +48,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_explode(self):
+    def test_explode(self) -> None:
         df = spark.createDataFrame([], schema="struct<user:string, cars:array<string>>")
         df = df.withColumn("car", F.explode(df.cars))
 
@@ -73,7 +73,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_group_by(self):
+    def test_group_by(self) -> None:
         df = spark.createDataFrame([], schema="struct<user:string, city:string, children:int, height:double>")
         df = df.groupBy("city").agg(
             F.sum(df.children).alias("total_children"),
@@ -93,7 +93,7 @@ class PlanParserTestSuite(unittest.TestCase):
                                expected_grouping_expressions=['city'])
 
 
-    def test_join(self):
+    def test_join(self) -> None:
         people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
         cities = spark.createDataFrame([], schema="struct<city:string, zip_code:string, lat:float, lon:float>")
 
@@ -168,7 +168,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=cities_rdd, expected_schema=schema)
 
 
-    def test_window(self):
+    def test_window(self) -> None:
         df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
         # create a 3 day rolling average of the revenue
         window = Window.partitionBy().orderBy(df.date).rowsBetween(-3, 0)
@@ -196,21 +196,21 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- date: string (nullable = true)\n"
                   " |-- rolling_avg: double (nullable = true)\n")
 
-        window = project.children[0]
-        self._expect_window(node=window, expected_schema=schema)
+        window_node = project.children[0]
+        self._expect_window(node=window_node, expected_schema=schema)
 
         schema = ("root\n"
                   " |-- revenue: float (nullable = true)\n"
                   " |-- date: string (nullable = true)\n")
 
-        project = window.children[0]
+        project = window_node.children[0]
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['revenue', 'date'])
 
         rdd = project.children[0]
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_with_column(self):
+    def test_with_column(self) -> None:
         df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
 
         df = df.withColumn("surplus", df.income - df.expenses)
@@ -256,7 +256,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_order_by(self):
+    def test_order_by(self) -> None:
         df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
         df = df.orderBy(df.income, df.expenses.desc())
         schema = ("root\n"
@@ -271,7 +271,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def _expect_project(self, node: Node, expected_schema: str, expected_column_names: List):
+    def _expect_project(self, node: Node, expected_schema: str, expected_column_names: List[str]) -> None:
         assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
 
         found_columns = node.columns.values()
@@ -282,7 +282,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_filter(self, node: Node, expected_schema: str, expected_condition):
+    def _expect_filter(self, node: Node, expected_schema: str, expected_condition: str) -> None:
         assert node.type == NodeType.Filter, f'Expected Filter node but "{node.type}" found'
         
         assert node.metadata['condition'] == expected_condition
@@ -291,7 +291,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_rdd(self, node: Node, expected_schema: str):
+    def _expect_rdd(self, node: Node, expected_schema: str) -> None:
         assert node.type == NodeType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
 
         # TODO: assert metadata
@@ -300,7 +300,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 0
 
 
-    def _expect_generate(self, node: Node, expected_schema: str, expected_generator):
+    def _expect_generate(self, node: Node, expected_schema: str, expected_generator: str) -> None:
         assert node.type == NodeType.Generate, f'Expected Generate node but "{node.type}" found'
 
         assert node.metadata['generator'] == expected_generator
@@ -309,7 +309,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_aggregate(self, node: Node, expected_schema: str, expected_aggregate_expressions: List, expected_grouping_expressions: List):
+    def _expect_aggregate(self, node: Node, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str]) -> None:
         assert node.type == NodeType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
 
         assert node.metadata['aggregate_expressions'] == expected_aggregate_expressions
@@ -319,7 +319,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_join(self, node: Node, expected_schema: str, expected_condition, expected_join_type):
+    def _expect_join(self, node: Node, expected_schema: str, expected_condition: str, expected_join_type: str) -> None:
         assert node.type == NodeType.Join, f'Expected Join node but "{node.type}" found'
 
         assert node.metadata['condition'] == expected_condition
@@ -329,7 +329,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 2
 
 
-    def _expect_window(self, node: Node, expected_schema: str):
+    def _expect_window(self, node: Node, expected_schema: str) -> None:
         assert node.type == NodeType.Window, f'Expected Window node but "{node.type}" found'
         
         # TODO: assert metadata
@@ -338,7 +338,7 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_sort(self, node: Node, expected_schema: str, expected_order: List):
+    def _expect_sort(self, node: Node, expected_schema: str, expected_order: List[str]) -> None:
         assert node.type == NodeType.Sort, f'Expected Sort node but "{node.type}" found'
         
         assert node.metadata['order'] == expected_order

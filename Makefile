@@ -1,11 +1,12 @@
 init:
+	pipenv sync --dev
 	pipenv shell
 
 tests:
 	pytest -vv tests
 
-grammar:
-	cd tree-sitter-spark-explain && tree-sitter generate
+mypy:
+	mypy --install-types --non-interactive --strict spark_board tests
 
 docker:
 	docker run -ti --rm  -v $(shell pwd):/app spark-board
@@ -13,4 +14,4 @@ docker:
 docker-image:
 	docker build -t spark-board .
 
-.PHONY: tests init
+.PHONY: tests init mypy

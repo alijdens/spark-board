@@ -13,6 +13,3 @@ mypy = "==1.3.0"
 # packages that are installed in the local development environment
 pudb = "==2022.1.*"
 ipython = "*"
-
-[requires]
-python_version = ">=3.7"

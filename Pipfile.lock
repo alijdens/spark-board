@@ -1,12 +1,10 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b63d3b0f4d2578c3d735a930ca199647c6cd8a72ecf98c5b28fa5220b6d56d81"
+            "sha256": "8b8adeb569a6c7c49c0a6495cbc64abf49a072fdc88153dbeea33129ddb9d5b1"
         },
         "pipfile-spec": 6,
-        "requires": {
-            "python_version": ">=3.7"
-        },
+        "requires": {},
         "sources": [
             {
                 "name": "pypi",
@@ -88,6 +86,20 @@
             "markers": "python_version >= '3.6'",
             "version": "==1.0.0"
         },
+        "py4j": {
+            "hashes": [
+                "sha256:0b6e5315bb3ada5cf62ac651d107bb2ebc02def3dee9d9548e3baac644ea8dbb",
+                "sha256:85defdfd2b2376eb3abf5ca6474b51ab7e0de341c75a02f46dc9b5976f5a5c1b"
+            ],
+            "version": "==0.10.9.7"
+        },
+        "pyspark": {
+            "hashes": [
+                "sha256:167a23e11854adb37f8602de6fcc3a4f96fd5f1e323b9bb83325f38408c5aafd"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==3.4.0"
+        },
         "pytest": {
             "hashes": [
                 "sha256:3799fa815351fea3a5e96ac7e503a96fa51cc9942c3753cda7651b93c1cfa362",
@@ -110,11 +122,11 @@
         },
         "typing-extensions": {
             "hashes": [
-                "sha256:6ad00b63f849b7dcc313b70b6b304ed67b2b2963b3098a33efe18056b1a9a223",
-                "sha256:ff6b238610c747e44c268aa4bb23c8c735d665a63726df3f9431ce707f2aa768"
+                "sha256:06006244c70ac8ee83fa8282cb188f697b8db25bc8b4df07be1873c43897060c",
+                "sha256:3a8b36f13dd5fdc5d1b16fe317f5668545de77fa0b8e02006381fd49d731ab98"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==4.6.0"
+            "version": "==4.6.2"
         }
     },
     "develop": {

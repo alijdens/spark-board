@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="spark-board",
+    version="0.0.1",
     authors=[
         {"name": "Axel Lijdens", "email": "alijdens@fi.uba.ar"},
         {"name": "Ezequiel Werner", "email": "ewerner@fi.uba.ar"},
@@ -13,9 +14,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    dependencies=[
-        "python>=3.7",
-        "pyspark",
+    python_requires=">3.6",
+    install_requires=[
+        "pyspark>3",
     ],
     packages=find_packages(
         where=["spark_board"],  # list of folders that contain the packages (["."] by default)

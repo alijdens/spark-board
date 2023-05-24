@@ -2,7 +2,7 @@ import enum
 import dataclasses
 from py4j.java_gateway import JavaObject
 from pyspark.sql import DataFrame
-from typing import List, Dict
+from typing import List, Dict, Any, Generator
 
 
 class NodeType(enum.Enum):
@@ -29,11 +29,14 @@ class NodeColumn(object):
     links: List['NodeColumn']
 
 
+Metadata = Dict[str, Any]
+
+
 @dataclasses.dataclass
 class Node:
     id: int
     type: NodeType
-    metadata: Dict[str, str]  # TODO: make it more type specific
+    metadata: Metadata  # TODO: make it more node-type specific
     children: List['Node']
     columns: Dict[int, NodeColumn]
 
@@ -89,7 +92,7 @@ def parse_transformation(node: JavaObject) -> Node:
     return parser.parse(node)
 
 
-def iterate_java_object(iterable: JavaObject):
+def iterate_java_object(iterable: JavaObject) -> Generator[JavaObject, None, None]:
     it = iterable.iterator()
     while it.hasNext():
         yield it.next()
@@ -150,21 +153,21 @@ class NodeParser(object):
             links=links
         )
 
-    def _parse_common_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_common_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["schema_string"] = node.schemaString()
 
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         pass
 
     def _get_type(self) -> NodeType:
         raise NotImplementedError("Abstract method")
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         raise NotImplementedError("Abstract method")
 
 
 class ProjectParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: Something besides the columns?
         pass
 
@@ -174,58 +177,58 @@ class ProjectParser(NodeParser):
     def _get_type(self) -> NodeType:
         return NodeType.Project
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
 
 
 class FilterParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["condition"] = node.condition().sql()
 
     def _get_type(self) -> NodeType:
         return NodeType.Filter
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
 
 
 class LogicalRDDParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: collect metadata about RDD columns
         pass
 
     def _get_type(self) -> NodeType:
         return NodeType.LogicalRDD
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 0
 
 
 class JoinParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["condition"] = node.condition().toString()
         metadata["join_type"] = node.joinType().toString()
 
     def _get_type(self) -> NodeType:
         return NodeType.Join
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 2
 
 
 class GenerateParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["generator"] = node.generator().sql()
 
     def _get_type(self) -> NodeType:
         return NodeType.Generate
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
 
 
 class AggregateParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         aggregate_expressions = []
         for aggregate_expression in iterate_java_object(node.aggregateExpressions()):
             aggregate_expressions.append(aggregate_expression.sql())
@@ -240,28 +243,28 @@ class AggregateParser(NodeParser):
     def _get_type(self) -> NodeType:
         return NodeType.Aggregate
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
 
 
 class WindowParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: parse metadata
         pass
 
     def _get_type(self) -> NodeType:
         return NodeType.Window
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
 
 
 class SortParser(NodeParser):
-    def _parse_metadata(self, node: JavaObject, metadata: Dict):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["order"] = [c.sql() for c in iterate_java_object(node.order())]
 
     def _get_type(self) -> NodeType:
         return NodeType.Sort
 
-    def _expected_number_of_nodes(self):
+    def _expected_number_of_nodes(self) -> int:
         return 1
