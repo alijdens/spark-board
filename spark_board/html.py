@@ -114,7 +114,8 @@ def _column_link_as_dict(source_column, target_column):
     return {
         "id": f"({source})-({target})",
         "source": source,
-        "target": target
+        "target": target,
+        "animated": True,
     }
 
 
