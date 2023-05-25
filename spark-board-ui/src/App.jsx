@@ -24,58 +24,68 @@ export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(model_initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
+  // Selected node: For the time being, it's chosen with onClick because we don't want
+  // to have multiple "selected nodes"
   const [selectedNode, setSelectedNode] = React.useState(model_initialNodes[0]);
-  const [selectedColumn, setSelectedColumn] = React.useState(undefined);
+  
+  // When the user selects a column, the column tracking has the ids for all the columns that 
+  // originate the selected one.
   const [columnTracking, setColumnTracking] = React.useState([]);
 
-  const nodesById = useMemo(() => new Map(model_initialNodes.map(node => [node.id, node]),), [model_initialNodes]);
+  // Map containing all nodes, both transformations and columns
+  const nodesById = useMemo(() => 
+    new Map(model_initialNodes.map(node => [node.id, node]),)
+  , [model_initialNodes]);
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  // Callback to set one node as selected, and reset the column tracking
   const onNodeClick = useCallback((event, node) => {
     if (node.type == "transformation") {
       setSelectedNode(node);
-      setSelectedColumn(undefined);
       setColumnTracking([]);
     }
   }, [setSelectedNode]);
 
-  // register the transformation node type into react-flow
+  // Used to register the transformation and column node types into react-flow
   const nodeTypes = useMemo(() => ({
     transformation: TransformationNode,
     column: ColumnNode
   }), []);
 
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.type == "transformation") {
-          if (node.id === selectedNode.id) {
-            node.style = { ...node.style, fontWeight: "bold" };
-            node.data.selectedColumn = selectedColumn;
-          } else {
-            node.style = { ...node.style, fontWeight: "normal" };
-            node.data.selectedColumn = undefined;
-          }
+  useEffect(() => setNodes((nds) => nds.map((node) => {
+      if (node.type == "transformation") {
+        if (node.id === selectedNode.id) {
+          node.style = { ...node.style, fontWeight: "bold" };
         } else {
-          if (columnTracking.includes(node.id)) {
-            console.log("On selected column, node is:", node);
-            node.style = { ...node.style };
-            node.data.hidden = false;
-          } else {
-            node.style = { ...node.style };
-            node.data.hidden = true;
-          }
+          node.style = { ...node.style, fontWeight: "normal" };
         }
+      } else {
+        if (columnTracking.includes(node.id)) {
+          node.style = { ...node.style };
+          node.data.hidden = false;
+        } else {
+          node.style = { ...node.style };
+          node.data.hidden = true;
+        }
+      }
+    return node;
+  })), [selectedNode, columnTracking]);
 
-        return node;
-      })
-    );
-  }, [selectedNode, selectedColumn]);
+  useEffect(() => setEdges((eds) => eds.map((edge) => {
+    // TODO: Taking advantage of this flag, which is not semantically correct. Add an edge type
+    // instead
+    if (edge.animated) {
+      if (columnTracking.includes(edge.source) && columnTracking.includes(edge.target)) {
+        edge.hidden = false;
+      } else {
+        edge.hidden = true;
+      }
+    }
+    return edge;
+  })), [columnTracking]);
 
   return (
     <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-      <SideBar width="400px" node={selectedNode} selectedColumn={selectedColumn} onSelectedColumnChange={(column) => {
-        setSelectedColumn(column.id);
+      <SideBar width="400px" node={selectedNode} onSelectedColumnChange={(column) => {
         const colTracking = calculateColumnTracking(nodesById, column);
         setColumnTracking(colTracking);
       }} />
@@ -84,11 +94,9 @@ export default function App() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         fitView
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
-        hidden={false}
       >
         <Controls />
         <MiniMap zoomable pannable/>

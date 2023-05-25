@@ -27,7 +27,7 @@ function Section(props) {
 }
 
 
-function SideBar({ width, node, selectedColumn, onSelectedColumnChange }) {
+function SideBar({ width, node, onSelectedColumnChange }) {
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
