@@ -28,6 +28,10 @@ function Section(props) {
 
 
 function SideBar({ width, node, onSelectedColumnChange }) {
+    if (!node) {
+        // if no node is selected, do not render the sidebar
+        return <div></div>
+    }
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
