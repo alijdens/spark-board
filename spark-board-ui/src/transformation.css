@@ -5,3 +5,10 @@
   border: 2px solid black;
   text-align: center;
 }
+
+
+/* this is the class used to stylify the selected node */
+.transformation-node-selected {
+  box-shadow: 0 0 5px 5px #48abe0;
+  font-weight: "bold";
+}

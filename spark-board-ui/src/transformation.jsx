@@ -2,7 +2,6 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 function TransformationNode({ data }) {
@@ -35,11 +34,19 @@ function TransformationNode({ data }) {
         backgroundColor: color,
     }
 
+    let classes = ["transformation-node__container"];
+    if (data.selected()) {
+        classes.push("transformation-node-selected");
+    }
     return (
         <>
-            <div className="transformation-node__container" style={ nodeStyle }>
+            <div className={ classes.join(" ") } style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
+                {
+                    // TODO: Foreach non-hidden column
+                    <br />
+                }
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>
