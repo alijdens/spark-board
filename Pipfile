@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pyspark = "*"
-tree-sitter = "*"
-pytest = "*"
-pudb = "*"
+# package that will be installes in the CI/CD pipeline
+spark-board = {editable = true, path = "."}
+pytest = "==7.3.1"
+mypy = "==1.3.0"
 
 [dev-packages]
-
-[requires]
-python_version = "3"
+# packages that are installed in the local development environment
+pudb = "==2022.1.*"
+ipython = "*"

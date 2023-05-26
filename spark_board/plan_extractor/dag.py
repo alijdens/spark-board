@@ -11,7 +11,7 @@ class DFSNodeData:
     parent_id: Optional[int]
 
     # parent node reference
-    parent: Node
+    parent: Optional[Node]
 
     # the depth of the node in the DFS
     depth: int
@@ -37,9 +37,10 @@ def dfs(root: Node) -> Generator[Tuple[DFSNodeData, Node], None, None]:
         node_id = stack.pop()
 
         # yield the node data and the node itself
+        parent_id = parents[node_id]
         data = DFSNodeData(
             parent_id=parents[node_id],
-            parent=nodes[parents[node_id]] if parents[node_id] is not None else None,
+            parent=nodes[parent_id] if parent_id is not None else None,
             depth=depths[node_id],
         )
         yield data, nodes[node_id]
@@ -68,7 +69,7 @@ def build_layout(root: Node) -> Dict[Node, Position]:
     positions: Dict[Node, Position] = defaultdict(Position)
     leaf_nodes_found = 0
 
-    def _calculate_position(node: Node, depth: int = 0):
+    def _calculate_position(node: Node, depth: int = 0) -> float:
         positions[node].x = 200 * depth
 
         nonlocal leaf_nodes_found

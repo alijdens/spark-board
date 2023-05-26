@@ -3,9 +3,9 @@ import shutil
 import json
 
 from .plan_extractor import plan_parser, dag
-from .plan_extractor.plan_parser import NodeType
+from .plan_extractor.plan_parser import NodeType, NodeColumn
 from pyspark.sql import DataFrame
-from typing import Dict
+from typing import Dict, Any, List, Tuple
 
 
 # string template to build the JS file containing the graph definition as nodes
@@ -17,7 +17,7 @@ const model_initialEdges = {links};
 """
 
 class Encoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         if isinstance(o, dag.Position):
             return {"x": o.x, "y": o.y}
         return json.JSONEncoder.default(self, o)    
@@ -103,7 +103,7 @@ def _transofmations_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) 
     }
 
 
-def _column_link_as_dict(source_column, target_column):
+def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -> Dict[str, str]:
     source = f"{str(source_column.node_id)}->{str(source_column.id)}"
     target = f"{str(target_column.node_id)}->{str(target_column.id)}"
     return {
@@ -113,7 +113,7 @@ def _column_link_as_dict(source_column, target_column):
     }
 
 
-def get_nodes_and_links(tree: plan_parser.Node):
+def get_nodes_and_links(tree: plan_parser.Node) -> Tuple[List[Any], List[Any]]:
     """Convert the tree into a list of nodes and links for the HTML DAG."""
 
     positions = dag.build_layout(tree)

@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Test:
+    runs-on: ubuntu-22.04
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.7'
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre default-jdk
+
+        pip install pipenv==2023.4.29
+        pipenv sync
+    - name: mypy
+      run: |
+        pipenv run make mypy
+    - name: Test with pytest
+      run: |
+        pipenv run make tests

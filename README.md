@@ -16,6 +16,17 @@ To run the docker image as a development environment (i.e. interactive session w
 make docker
 ```
 
+## Developing locally
+
+Make sure you have the required Java RE for the Spark version you want to run properly setup for Spark use.
+
+Install `pipenv` and run:
+
+```shell
+pipenv sync --dev
+pipenv shell
+```
+
 ## How to use it
 
 ### Dependencies
