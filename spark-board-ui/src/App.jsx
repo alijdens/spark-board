@@ -4,41 +4,12 @@ import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls } f
 import TransformationNode from './transformation';
 import ColumnNode from './column';
 import SideBar from './sidebar';
+import drawColumnGraph, { useColumnGraphState } from './columnGraph';
 
 import 'reactflow/dist/style.css';
 import './transformation.css';
 import './App.css'
 
-function calculateColumnTracking(nodesById, column) {
-    return [column.id].concat(column.data.linked_columns.map((linkedId) =>
-        calculateColumnTracking(nodesById, nodesById.get(linkedId))
-    )).flat();
-}
-
-function getNodesById(initialNodes) {
-    return new Map(initialNodes.map(node => [node.id, node]),);
-}
-
-function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTracking) {
-    if (columnTracking.includes(currentNode.id)) {
-        currentNode.style = { ...currentNode.style };
-        currentNode.data.hidden = false;
-    } else {
-        currentNode.style = { ...currentNode.style };
-        currentNode.data.hidden = true;
-    }
-    return currentNode;
-}
-
-function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking) {
-    if (columnTracking.includes(currentEdge.source) && columnTracking.includes(currentEdge.target)) {
-        currentEdge.hidden = false;
-        currentEdge.zIndex = 1;
-    } else {
-        currentEdge.hidden = true;
-    }
-    return currentEdge;
-}
 
 export default function App() {
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
@@ -60,52 +31,30 @@ export default function App() {
     });
     const [nodes, setNodes, onNodesChange] = useNodesState(model_initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
-    
-    // When the user selects a column, the column tracking has the ids for all the columns that 
-    // originate the selected one.
-    const [columnTracking, setColumnTracking] = React.useState([]);
-
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
-
-    // Callback to set one node as selected, and reset the column tracking
-    const onNodeClick = useCallback((event, node) => {
-        if (node.type == "transformation") {
-            setSelectedTransformation(node);
-            setColumnTracking([]);
-        }
-    }, [selectedTransformation]);
 
     // Used to register the transformation and column node types into react-flow
     const nodeTypes = useMemo(() => ({
         transformation: TransformationNode,
         column: ColumnNode
-    }), [setSelectedTransformation, setColumnTracking]);
+    }), []);
 
-    // Effect over column nodes when selected column
-    useEffect(() => setNodes((nds) => nds.map((node) => {
-        if (node.type == "column") {
-            return applyColumnNodeEffectOnColumnTrackingChanged(node, columnTracking);
-        }
-        return node;
-    })), [columnTracking]);
+    // controls the column for which the column graph is shown
+    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
 
-    // Effect over edges when selected column
-    useEffect(() => setEdges((eds) => eds.map((edge) => {
-        // TODO: Taking advantage of this flag, which is not semantically correct. Add an edge type
-        // instead
-        if (edge.animated) {
-            return applyEdgesEffectOnColumnTrackingChanged(edge, columnTracking);
+    // hook that renders the column graph
+    drawColumnGraph(setNodes, setEdges, selectedColumn);
+
+    // Callback to set one node as selected, and reset the column tracking
+    const onNodeClick = useCallback((event, node) => {
+        if (node.type == "transformation") {
+            setSelectedTransformation(node);
+            setSelectedColumn(null);
         }
-        return edge;
-    })), [columnTracking]);
+    }, [selectedTransformation, selectedColumn]);
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-            <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={(column) => {
-                const colTracking = calculateColumnTracking(nodesById, column);
-                setColumnTracking(colTracking);
-            }} />
+            <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={setSelectedColumn} />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
