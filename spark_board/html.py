@@ -108,7 +108,7 @@ def _transofmations_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) 
     }
 
 
-def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -> Dict[str, str]:
+def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -> Dict[str, Any]:
     source = f"{str(source_column.node_id)}->{str(source_column.id)}"
     target = f"{str(target_column.node_id)}->{str(target_column.id)}"
     return {
