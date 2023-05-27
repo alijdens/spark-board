@@ -33,7 +33,7 @@ const model_initialNodes = [
                         ]
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 },
@@ -52,7 +52,7 @@ const model_initialNodes = [
                         ]
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 },
@@ -71,7 +71,7 @@ const model_initialNodes = [
                         ]
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 }
@@ -105,7 +105,7 @@ const model_initialNodes = [
                         ]
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 },
@@ -124,7 +124,7 @@ const model_initialNodes = [
                         ]
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 },
@@ -141,7 +141,7 @@ const model_initialNodes = [
                         "linked_columns": []
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 }
@@ -173,7 +173,7 @@ const model_initialNodes = [
                         "linked_columns": []
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 },
@@ -190,7 +190,7 @@ const model_initialNodes = [
                         "linked_columns": []
                     },
                     "position": {
-                        "x": 15,
+                        "x": 0,
                         "y": 25
                     }
                 }
@@ -216,7 +216,7 @@ const model_initialNodes = [
             ]
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -235,7 +235,7 @@ const model_initialNodes = [
             ]
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -254,7 +254,7 @@ const model_initialNodes = [
             ]
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -273,7 +273,7 @@ const model_initialNodes = [
             ]
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -292,7 +292,7 @@ const model_initialNodes = [
             ]
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -309,7 +309,7 @@ const model_initialNodes = [
             "linked_columns": []
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -326,7 +326,7 @@ const model_initialNodes = [
             "linked_columns": []
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     },
@@ -343,7 +343,7 @@ const model_initialNodes = [
             "linked_columns": []
         },
         "position": {
-            "x": 15,
+            "x": 0,
             "y": 25
         }
     }

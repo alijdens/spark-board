@@ -65,7 +65,7 @@ def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
             "type": column.type,
             "linked_columns": [_get_column_id(link) for link in column.links]
         },
-        "position": {"x": 15, "y": 25}
+        "position": {"x": 0, "y": 25}
     } 
 
 
