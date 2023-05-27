@@ -63,6 +63,7 @@ export default function App() {
                 fitView
                 nodeTypes={nodeTypes}
                 onNodeClick={onNodeClick}
+                fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
             >
                 <Controls />
                 <MiniMap zoomable pannable/>
