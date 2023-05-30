@@ -43,10 +43,6 @@ function TransformationNode({ data }) {
             <div className={ classes.join(" ") } style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
-                {
-                    // TODO: Foreach non-hidden column
-                    <br />
-                }
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>
