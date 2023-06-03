@@ -23,3 +23,7 @@
     display: block;
     padding-bottom: 4px;
 }
+
+.multiline {
+  white-space: pre-wrap;
+}

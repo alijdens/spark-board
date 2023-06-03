@@ -79,6 +79,7 @@ def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, posit
         NodeType.Aggregate: 'Group',
         NodeType.Join: 'Join',
         NodeType.Sort: 'Sort',
+        NodeType.Window: 'Window'
     }
 
     return {
@@ -92,9 +93,9 @@ def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, posit
             "type": node_type_map[node.type],
             # label to display in the node
             "label": node_type_map[node.type],
-            # SQL schema of the transformation
-            "schema_string": node.metadata["schema_string"],
-            "columns": [_column_as_dict(column) for column in node.columns.values()]
+            # Metadata depending on node type
+            **node.metadata,
+            "columns": [_column_as_dict(column) for column in node.columns.values()],
         },
         "position": positions[node],
     }
