@@ -28,6 +28,9 @@ function TransformationNode({ data }) {
         case "Sort":
             color = "yellow";
             break;
+        case "Window":
+            color = "pink";
+            break;
     }
 
     const nodeStyle = {
