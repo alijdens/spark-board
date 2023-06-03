@@ -26,7 +26,6 @@ function Section(props) {
     );
 }
 
-
 function transformationData(transformationNode) {
     switch (transformationNode.data.type) {
         case "Join":
@@ -84,7 +83,6 @@ function transformationData(transformationNode) {
     }
 }
 
-
 function SideBar({ width, node, onSelectedColumnChange }) {
     if (!node) {
         // if no node is selected, do not render the sidebar
@@ -93,7 +91,7 @@ function SideBar({ width, node, onSelectedColumnChange }) {
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
-            <Section title="Output Columns" >
+            <Section title="Output Columns" defaultExpanded="true">
                 {
                     node.data.columns.map((col) => {
                         return (
@@ -107,12 +105,11 @@ function SideBar({ width, node, onSelectedColumnChange }) {
                 )}
                 <br/><br/>
             </Section>
-            <Section title="Transformation data" defaultExpanded="true">
+            <Section title="Transformation data">
                 { transformationData(node) }
             </Section>
        </div>
     )
 }
-
 
 export default SideBar;
