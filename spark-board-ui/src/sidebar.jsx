@@ -40,15 +40,15 @@ function transformationData(transformationNode) {
                 </div>)
 
         case "Project":
-            return (<div class="multiline" >
+            return (<div className="multiline" >
                     Schema String:<p/>{ transformationNode.data.schema_string }
                 </div>)
         case "Table":
-            return (<div class="multiline">
+            return (<div className="multiline">
                     Schema String:<p/>{ transformationNode.data.schema_string }
                 </div>)
         case "Window":
-            return (<div class="multiline">
+            return (<div className="multiline">
                     Schema String:<p/>{ transformationNode.data.schema_string }
                 </div>)            
 
