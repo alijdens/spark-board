@@ -4,32 +4,43 @@
 
 import { Handle, Position } from 'reactflow';
 
+import DocumentIcon from './assets/document.svg';
+import FilterIcon from './assets/filter.svg';
+import DefaultIcon from './assets/general processor.jpg';
+import GroupIcon from './assets/group.svg';
+import JoinIcon from './assets/join.svg';
+import ProjectIcon from './assets/project.svg';
+import SortIcon from './assets/sort.svg';
+import TableIcon from './assets/table.svg';
+import UploadIcon from './assets/upload.svg';
+
 function TransformationNode({ data }) {
     let color = "";
+    let icon = DefaultIcon;
     switch(data.type) {
         case "Project":
-            color = "orange";
+            [color, icon] = ["orange", ProjectIcon];
             break;
         case "Filter":
-            color = "lightblue";
+            [color, icon] = ["lightblue", FilterIcon];
             break;
         case "Table":
-            color = "red";
+            [color, icon] = ["red", TableIcon];
             break;
         case "Transform":
-            color = "gray";
+            [color, icon] = ["gray", UploadIcon];
             break;
         case "Group":
-            color = "purple";
+            [color, icon] = ["purple", GroupIcon];
             break;
         case "Join":
-            color = "green";
+            [color, icon] = ["green", JoinIcon];
             break;
         case "Sort":
-            color = "yellow";
+            [color, icon] = ["yellow", SortIcon];
             break;
         case "Window":
-            color = "pink";
+            [color, icon] = ["pink", TableIcon];
             break;
     }
 
@@ -46,6 +57,7 @@ function TransformationNode({ data }) {
             <div className={ classes.join(" ") } style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
+                <img src={ icon } />
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>
