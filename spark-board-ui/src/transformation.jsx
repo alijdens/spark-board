@@ -19,36 +19,28 @@ function TransformationNode({ data }) {
     let icon = DefaultIcon;
     switch(data.type) {
         case "Project":
-            color = "orange";
-            icon = ProjectIcon;
+            [color, icon] = ["orange", ProjectIcon];
             break;
         case "Filter":
-            color = "lightblue";
-            icon = FilterIcon;
+            [color, icon] = ["lightblue", FilterIcon];
             break;
         case "Table":
-            color = "red";
-            icon = TableIcon;
+            [color, icon] = ["red", TableIcon];
             break;
         case "Transform":
-            color = "gray";
-            icon = UploadIcon;
+            [color, icon] = ["gray", UploadIcon];
             break;
         case "Group":
-            color = "purple";
-            icon = GroupIcon;
+            [color, icon] = ["purple", GroupIcon];
             break;
         case "Join":
-            color = "green";
-            icon = JoinIcon;
+            [color, icon] = ["green", JoinIcon];
             break;
         case "Sort":
-            color = "yellow";
-            icon = SortIcon;
+            [color, icon] = ["yellow", SortIcon];
             break;
         case "Window":
-            color = "pink";
-            icon = TableIcon;
+            [color, icon] = ["pink", TableIcon];
             break;
     }
 
