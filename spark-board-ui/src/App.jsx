@@ -52,11 +52,7 @@ export default function App() {
         }
     }, [selectedTransformation, selectedColumn]);
 
-    const options = {
-      includeHiddenNodes: false, // this is the default
-    };
-
-    const nodesInitialized = useNodesInitialized(options);
+    const nodesInitialized = useNodesInitialized({ includeHiddenNodes: false });
 
     useEffect(() => {
         console.log("nodesInitialized: " + nodesInitialized);
