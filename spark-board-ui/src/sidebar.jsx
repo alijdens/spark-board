@@ -96,8 +96,11 @@ function SideBar({ width, node, onSelectedColumnChange }) {
                     node.data.columns.map((col) => {
                         return (
                             <div key={col.id}>
-                                <button onClick={(event) => onSelectedColumnChange(col)}>
+                                <button style={{textAlign: "left"}} onClick={(event) => onSelectedColumnChange(col)}>
                                     {col.data.name} ({col.data.id}) - ({col.data.type})
+                                    <div className="multiline" style={{fontFamily: "monospace"}}>
+                                        {col.data.tree_string}
+                                    </div>
                                 </button>
                             </div>
                         )

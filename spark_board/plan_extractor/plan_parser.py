@@ -23,6 +23,7 @@ class NodeColumn(object):
     id: int
     type: str
     node_id: int
+    tree_string: str
 
     # List of the columns in previous nodes which form this column. This can be used
     # to navigate recursively until the data sources and discover its origins.
@@ -137,6 +138,7 @@ class NodeParser(object):
         column_id = java_column.exprId().id()
         data_type = java_column.dataType().simpleString()
         reference_ids = [reference.exprId().id() for reference in iterate_java_object(java_column.references())]
+        tree_string = java_column.treeString()
 
         # For each referenced column, search it in the children in order to add a link
         links = []
@@ -150,7 +152,8 @@ class NodeParser(object):
             id=column_id,
             type=data_type,
             node_id=id(self),
-            links=links
+            links=links,
+            tree_string=tree_string
         )
 
     def _parse_common_metadata(self, node: JavaObject, metadata: Metadata) -> None:
