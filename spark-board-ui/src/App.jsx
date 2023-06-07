@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
-import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls } from 'reactflow';
+import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls, useNodesInitialized } from 'reactflow';
 
 import TransformationNode from './transformation';
 import ColumnNode from './column';
@@ -51,6 +51,16 @@ export default function App() {
             setSelectedColumn(null);
         }
     }, [selectedTransformation, selectedColumn]);
+
+    const options = {
+      includeHiddenNodes: false, // this is the default
+    };
+
+    const nodesInitialized = useNodesInitialized(options);
+
+    useEffect(() => {
+        console.log("nodesInitialized: " + nodesInitialized);
+    }, [nodesInitialized]);
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
