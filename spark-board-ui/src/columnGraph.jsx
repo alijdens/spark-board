@@ -100,11 +100,9 @@ function buildColumnGraph(nodesById, column) {
 
 function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTracking) {
     if (columnTracking.includes(currentNode.id)) {
-        currentNode.style = { ...currentNode.style };
-        currentNode.data.hidden = false;
+        currentNode.hidden = false;
     } else {
-        currentNode.style = { ...currentNode.style };
-        currentNode.data.hidden = true;
+        currentNode.hidden = true;
     }
     return currentNode;
 }
