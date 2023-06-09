@@ -70,7 +70,7 @@ def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
     } 
 
 
-def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, positions: Dict[plan_parser.Node, dag.Position]) -> Dict[str, object]:
+def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
         NodeType.Project: 'Project',
@@ -98,7 +98,6 @@ def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, posit
             **node.metadata,
             "columns": [_column_as_dict(column) for column in node.columns.values()],
         },
-        "position": positions[node],
     }
 
 
@@ -124,11 +123,9 @@ def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -
 def get_nodes_and_links(tree: plan_parser.Node) -> Tuple[List[Any], List[Any]]:
     """Convert the tree into a list of nodes and links for the HTML DAG."""
 
-    positions = dag.build_layout(tree)
-
     transformation_nodes, transformation_links, column_nodes, column_links = [], [], [], []
     for data, node in dag.dfs(tree):
-        transformation_nodes.append(_transformation_as_dict(data, node, positions))
+        transformation_nodes.append(_transformation_as_dict(node))
         # if the parent is None, it means we are at the root of the tree
         if data.parent_id is not None:
             transformation_links.append(_transofmations_link_as_dict(data, node))
