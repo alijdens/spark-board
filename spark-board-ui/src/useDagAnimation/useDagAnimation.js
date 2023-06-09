@@ -14,7 +14,9 @@ import { stepSimulation } from './physics';
  * @param {Array} edges react-flow edges.
  * @param {Map} targetPositions Map from the node IDs to the target positions (objects with `x` and `y`).
  * @param {Callback} setNodes react-flow state setter to update the nodes.
- * @returns Callback that will start the animation when called.
+ * @returns Two elements:
+ *          1. Callback that will start the animation when called.
+ *          2. Callback that will update the node positions with the ones given.
  */
 export function useDagAnimation(nodes, edges, targetPositions, setNodes) {    
     let nodeIdMapping = useRef(createNodeIdMapping(nodes));
@@ -30,6 +32,13 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
             startT.current = t;
         }
         let elapsed = (t - startT.current) / 1000;
+
+        if (elapsed > 5) {
+            // too much time has passed, reset the start time so we don't run many updated
+            // this could happen if the tab was inactive for a while
+            startT.current = t;
+            elapsed = 0;
+        }
 
         // use a constant time step for the simulation
         let hasUpdated = false;
@@ -75,11 +84,27 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
         state.current[3] = getSprings(targetPositions, nodeIdMapping.current, adjList, nodes);
     }, [targetPositions]);
 
-    // return a function that will start the animation
-    return () => {
-        animationId.current = requestAnimationFrame(onFrame);
-        return () => cancelAnimationFrame(animationId.current);
-    };
+    return [
+        // function that will start the animation
+        () => {
+            animationId.current = requestAnimationFrame(onFrame);
+            return () => cancelAnimationFrame(animationId.current);
+        },
+        // function that updates the node positions (not the target positions)
+        (positions) => setPositions(positions, state, nodeIdMapping)
+    ];
+
+}
+
+
+function setPositions(positions, state, nodeIdMapping) {
+    const pos = state.current[0];
+
+    for (let [id, position] of positions) {
+        const i = nodeIdMapping.current.get(id);
+        pos[i * 2] = position.x;
+        pos[i * 2 + 1] = position.y;
+    }
 }
 
 

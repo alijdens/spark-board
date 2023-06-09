@@ -7,6 +7,7 @@ import SideBar from './sidebar';
 import drawColumnGraph, { useColumnGraphState } from './columnGraph';
 import { buildLayout } from './dag'
 import useDagAnimation from './useDagAnimation';
+import CustomControls from './controls';
 
 import 'reactflow/dist/style.css';
 import './transformation.css';
@@ -52,7 +53,7 @@ export default function App() {
     }), []);
 
     const nodesInitialized = useNodesInitialized();
-    const startAnimation = useDagAnimation(nodes, edges, nodePositions, setNodes);
+    const [startAnimation, updateNodePositions] = useDagAnimation(nodes, edges, nodePositions, setNodes);
     useEffect(() => {
         if (nodesInitialized) {
             // calculate the node positions in the screen
@@ -92,7 +93,7 @@ export default function App() {
                 onNodeClick={onNodeClick}
                 fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
             >
-                <Controls />
+                <CustomControls updateNodePositions={updateNodePositions} nodes={nodes} />
                 <MiniMap zoomable pannable nodeColor={node => {
                     if (node.type == "transformation") {
                         return getTransformationStyle(node.data.type)[0];
