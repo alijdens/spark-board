@@ -60,7 +60,7 @@ export default function App() {
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-            <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={setSelectedColumn} />
+            <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={setSelectedColumn} selectedColumn={selectedColumn} />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

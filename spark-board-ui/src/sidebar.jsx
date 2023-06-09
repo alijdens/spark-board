@@ -14,7 +14,7 @@ function Section(props) {
     const { getCollapseProps, getToggleProps, isExpanded } = useCollapse(config);
 
     return (
-        <div className="sidebar__collapsible">
+        <div className="sidebar__collapsible" hidden={props.hidden} >
             <div className="header" {...getToggleProps()}>
                 <div className="title">{props.title}</div>
                 <FontAwesomeIcon icon={isExpanded ? faCircleChevronUp : faCircleChevronDown} />
@@ -85,7 +85,7 @@ function transformationData(transformationNode) {
     }
 }
 
-function SideBar({ width, node, onSelectedColumnChange }) {
+function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
     if (!node) {
         // if no node is selected, do not render the sidebar
         return <div></div>
@@ -116,6 +116,11 @@ function SideBar({ width, node, onSelectedColumnChange }) {
             </Section>
             <Section title="Transformation data">
                 { transformationData(node) }
+            </Section>
+            <Section title="Column Tree" hidden={node == null || selectedColumn == null} defaultExpanded>
+                <div className="multiline" style={{fontFamily: "monospace"}}>
+                    {selectedColumn != null ? selectedColumn.data.tree_string : "This text shouldn't be shown!"}
+                </div>
             </Section>
        </div>
     )
