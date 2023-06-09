@@ -100,7 +100,7 @@ function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
                             <div key={col.id}>
                                 <Tooltip title=
                                 {
-                                    <div className="multiline" style={{fontFamily: "monospace"}}>
+                                    <div className="multiline columntooltip">
                                             {col.data.tree_string}
                                     </div>
                                 } placement={"right"} >
