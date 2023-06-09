@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
-import ReactFlow, { useNodesState, useEdgesState, MiniMap, Controls, useNodesInitialized } from 'reactflow';
+import ReactFlow, { useNodesState, useEdgesState, MiniMap, Controls, useNodesInitialized, useReactFlow } from 'reactflow';
 
-import TransformationNode from './transformation';
+import TransformationNode, { getTransformationStyle } from './transformation';
 import ColumnNode from './column';
 import SideBar from './sidebar';
 import drawColumnGraph, { useColumnGraphState } from './columnGraph';
@@ -14,6 +14,8 @@ import './App.css'
 
 
 export default function App() {
+    const { fitBounds } = useReactFlow();
+
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
     // want to have multiple "selected nodes"
     const [selectedTransformation, setSelectedTransformation] = React.useState(null);
@@ -39,7 +41,7 @@ export default function App() {
     const [nodePositions, setNodePositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
-    
+
     const [nodes, setNodes, onNodesChange] = useNodesState(model_initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
@@ -91,7 +93,11 @@ export default function App() {
                 fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
             >
                 <Controls />
-                <MiniMap zoomable pannable/>
+                <MiniMap zoomable pannable nodeColor={node => {
+                    if (node.type == "transformation") {
+                        return getTransformationStyle(node.data.type)[0];
+                    }
+                }} />
             </ReactFlow>
         </div>
     );

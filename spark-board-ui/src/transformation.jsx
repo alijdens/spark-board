@@ -14,35 +14,9 @@ import SortIcon from './assets/sort.svg';
 import TableIcon from './assets/table.svg';
 import UploadIcon from './assets/upload.svg';
 
+
 function TransformationNode({ data }) {
-    let color = "";
-    let icon = DefaultIcon;
-    switch(data.type) {
-        case "Project":
-            [color, icon] = ["orange", ProjectIcon];
-            break;
-        case "Filter":
-            [color, icon] = ["lightblue", FilterIcon];
-            break;
-        case "Table":
-            [color, icon] = ["red", TableIcon];
-            break;
-        case "Transform":
-            [color, icon] = ["gray", UploadIcon];
-            break;
-        case "Group":
-            [color, icon] = ["purple", GroupIcon];
-            break;
-        case "Join":
-            [color, icon] = ["green", JoinIcon];
-            break;
-        case "Sort":
-            [color, icon] = ["yellow", SortIcon];
-            break;
-        case "Window":
-            [color, icon] = ["pink", TableIcon];
-            break;
-    }
+    const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
         backgroundColor: color,
@@ -65,3 +39,34 @@ function TransformationNode({ data }) {
 }
 
 export default TransformationNode;
+
+
+export function getTransformationStyle(transformationType) {
+    switch(transformationType) {
+        case "Project":
+            return ["orange", ProjectIcon];
+
+        case "Filter":
+            return ["lightblue", FilterIcon];
+
+        case "Table":
+            return ["red", TableIcon];
+
+        case "Transform":
+            return ["gray", UploadIcon];
+
+        case "Group":
+            return ["purple", GroupIcon];
+
+        case "Join":
+            return ["green", JoinIcon];
+
+        case "Sort":
+            return ["yellow", SortIcon];
+
+        case "Window":
+            return ["pink", TableIcon];
+    }
+
+    throw new Error("Unknown transformation type: " + transformationType);
+}
