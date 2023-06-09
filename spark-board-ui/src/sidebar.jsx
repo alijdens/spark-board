@@ -1,6 +1,8 @@
 import { useCollapse } from 'react-collapsed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleChevronUp, faCircleChevronDown } from '@fortawesome/free-solid-svg-icons'
+import Tooltip from '@mui/material/Tooltip';
+
 import "./sidebar.css";
 
 
@@ -96,12 +98,16 @@ function SideBar({ width, node, onSelectedColumnChange }) {
                     node.data.columns.map((col) => {
                         return (
                             <div key={col.id}>
-                                <button style={{textAlign: "left"}} onClick={(event) => onSelectedColumnChange(col)}>
-                                    {col.data.name} ({col.data.id}) - ({col.data.type})
+                                <Tooltip title=
+                                {
                                     <div className="multiline" style={{fontFamily: "monospace"}}>
-                                        {col.data.tree_string}
+                                            {col.data.tree_string}
                                     </div>
-                                </button>
+                                } placement={"right"} >
+                                    <button style={{textAlign: "left"}} onClick={(event) => onSelectedColumnChange(col)}>
+                                        {col.data.name} ({col.data.id}) - ({col.data.type})
+                                    </button>
+                                </Tooltip>
                             </div>
                         )
                     }
