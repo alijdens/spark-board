@@ -1,10 +1,12 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
-import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls, useNodesInitialized } from 'reactflow';
+import ReactFlow, { useNodesState, useEdgesState, MiniMap, Controls, useNodesInitialized } from 'reactflow';
 
 import TransformationNode from './transformation';
 import ColumnNode from './column';
 import SideBar from './sidebar';
 import drawColumnGraph, { useColumnGraphState } from './columnGraph';
+import { buildLayout } from './dag'
+import useDagAnimation from './useDagAnimation';
 
 import 'reactflow/dist/style.css';
 import './transformation.css';
@@ -24,11 +26,20 @@ export default function App() {
     model_initialNodes.forEach(node => {
         // add a callback inside the node `data` that defines whether the node
         // is selected or not
-        node.data.selected = useCallback(() =>
+        node.data.selected = useCallback(() => 
             // we check if the node is selected by comparing the nodes data
             selectedTransformation !== null && selectedTransformation.data == node.data
-        )
+        );
+
+        if (!node.position) {
+            node.position = {x: 0, y: 0};
+        }
     });
+
+    const [nodePositions, setNodePositions] = React.useState(new Map(
+        model_initialNodes.map(node => [node.id, node.position])
+    ));
+    
     const [nodes, setNodes, onNodesChange] = useNodesState(model_initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(model_initialEdges);
 
@@ -37,6 +48,20 @@ export default function App() {
         transformation: TransformationNode,
         column: ColumnNode
     }), []);
+
+    const nodesInitialized = useNodesInitialized();
+    const startAnimation = useDagAnimation(nodes, edges, nodePositions, setNodes);
+    useEffect(() => {
+        if (nodesInitialized) {
+            // calculate the node positions in the screen
+            const [dagLayout, bounds] = buildLayout(model_initialEdges[0].source, model_initialEdges);
+            // set the node animation to position in the layout
+            setNodePositions(dagLayout);
+            // set the viewport to the center of the layout
+            fitBounds(bounds, { duration: 0, padding: 0.1 });
+            return startAnimation();
+        }
+    }, [nodesInitialized]);
 
     // controls the column for which the column graph is shown
     const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
@@ -51,12 +76,6 @@ export default function App() {
             setSelectedColumn(null);
         }
     }, [selectedTransformation, selectedColumn]);
-
-    const nodesInitialized = useNodesInitialized({ includeHiddenNodes: false });
-
-    useEffect(() => {
-        console.log("nodesInitialized: " + nodesInitialized);
-    }, [nodesInitialized]);
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
