@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback, useMemo } from 'react';
 import { createSystem, getSprings } from './createSystem';
 import { stepSimulation } from './physics';
 
@@ -18,9 +18,12 @@ import { stepSimulation } from './physics';
  *          1. Callback that will start the animation when called.
  *          2. Callback that will update the node positions with the ones given.
  */
-export function useDagAnimation(nodes, edges, targetPositions, setNodes) {    
+export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
+    // mass of the nodes in the phyical simulation
+    const nodeMass = 0.3;
+
     let nodeIdMapping = useRef(createNodeIdMapping(nodes));
-    let state = useRef(createSystem(nodes, edges, targetPositions, nodeIdMapping.current));
+    let state = useRef(createSystem(nodes, edges, targetPositions, nodeIdMapping.current, nodeMass));
 
     const animationId = useRef(null);
 
@@ -84,16 +87,27 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
         state.current[3] = getSprings(targetPositions, nodeIdMapping.current, adjList, nodes);
     }, [targetPositions]);
 
-    return [
-        // function that will start the animation
-        () => {
+    // return an object to control the animation
+    return useMemo(() => Object.create({
+        // start the animation
+        start: () => {
             animationId.current = requestAnimationFrame(onFrame);
             return () => cancelAnimationFrame(animationId.current);
         },
-        // function that updates the node positions (not the target positions)
-        (positions) => setPositions(positions, state, nodeIdMapping)
-    ];
 
+        // function that updates the node positions (not the target positions)
+        updatePositions: (positions) => setPositions(positions, state, nodeIdMapping),
+
+        // function to fix or un-fix node position
+        setNodeFixed: (nodeId, fixed) => {
+            const id = nodeIdMapping.current.get(nodeId); // internal ID
+
+            // fix the node position by making its mass inifinite and velocity 0
+            state.current[4][id] = fixed ? Infinity : nodeMass;
+            state.current[1][id * 2] = 0.0;
+            state.current[1][id * 2 + 1] = 0.0;
+        }
+    }));
 }
 
 

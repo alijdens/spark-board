@@ -18,9 +18,10 @@ import { buildAdjacencyList } from '../dag';
  *                            where the nodes should be once the simulation converges). 
  * @param {Map} nodeIdMapping Map from the node IDs to the internal IDs used by the
  *                          physics engine (sequential integers starting from 0).
+ * @param {Number} mass Mass of the nodes in the system.
  * @returns Array of [positions, velocities, adjList, distances, masses]
  */
-export function createSystem(nodes, edges, targetPositions, nodeIdMapping) {
+export function createSystem(nodes, edges, targetPositions, nodeIdMapping, mass) {
     // store the node and the index in the array (we'll need it later to index
     // the position and velocity arrays)
     const nodesById = new Map(nodes.map(
@@ -49,7 +50,7 @@ export function createSystem(nodes, edges, targetPositions, nodeIdMapping) {
         positions[i * 2 + 1] = node.position.y;
         velocities[i * 2] = 0;
         velocities[i * 2 + 1] = 0;
-        masses[i] = 0.3;
+        masses[i] = mass;
     }
 
     // now initialize the artificial nodes to have the target position

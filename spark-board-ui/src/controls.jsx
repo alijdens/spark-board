@@ -9,10 +9,10 @@ import { faRefresh } from '@fortawesome/free-solid-svg-icons'
  * @param {array} nodes Array of react-flow nodes.
  * @returns Component.
  */
-export default function CustomControls({ updateNodePositions, nodes }) {
+export default function CustomControls({ animation, nodes }) {
     return (
         <Controls>
-            <ControlButton onClick={() => setNodePositions(updateNodePositions, nodes)} title="Organize nodes">
+            <ControlButton onClick={() => unfixNodes(animation, nodes)} title="Organize nodes">
                 <FontAwesomeIcon icon={faRefresh} style={{ color: "black" }} />
             </ControlButton>
         </Controls>
@@ -25,11 +25,9 @@ export default function CustomControls({ updateNodePositions, nodes }) {
  * with the react-flow nodes position.
  * In this way, the nodes will be animated back to the original DAG layout.
  */
-function setNodePositions(updateNodePositions, nodes) {
+function unfixNodes(animation, nodes) {
     const positions = new Map();
     nodes.forEach(node => {
-        positions.set(node.id, node.position);
+        animation.setNodeFixed(node.id, false);
     });
-
-    updateNodePositions(positions);
 }

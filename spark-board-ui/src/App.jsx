@@ -53,7 +53,7 @@ export default function App() {
     }), []);
 
     const nodesInitialized = useNodesInitialized();
-    const [startAnimation, updateNodePositions] = useDagAnimation(nodes, edges, nodePositions, setNodes);
+    const animation = useDagAnimation(nodes, edges, nodePositions, setNodes);
     useEffect(() => {
         if (nodesInitialized) {
             // calculate the node positions in the screen
@@ -62,7 +62,7 @@ export default function App() {
             setNodePositions(dagLayout);
             // set the viewport to the center of the layout
             fitBounds(bounds, { duration: 0, padding: 0.1 });
-            return startAnimation();
+            return animation.start();
         }
     }, [nodesInitialized]);
 
@@ -80,6 +80,13 @@ export default function App() {
         }
     }, [selectedTransformation, selectedColumn]);
 
+    const onNodeDragStart = useCallback((event, node) => {
+        animation.setNodeFixed(node.id, true);
+    }, [animation]);
+    const onNodeDrag = useCallback((event, node) => {
+        animation.updatePositions(new Map([[node.id, node.position]]));
+    }, [animation]);
+
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
             <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={setSelectedColumn} selectedColumn={selectedColumn} />
@@ -91,9 +98,11 @@ export default function App() {
                 fitView
                 nodeTypes={nodeTypes}
                 onNodeClick={onNodeClick}
+                onNodeDragStart={onNodeDragStart}
+                onNodeDrag={onNodeDrag}
                 fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
             >
-                <CustomControls updateNodePositions={updateNodePositions} nodes={nodes} />
+                <CustomControls animation={animation} nodes={nodes} />
                 <MiniMap zoomable pannable nodeColor={node => {
                     if (node.type == "transformation") {
                         return getTransformationStyle(node.data.type)[0];
