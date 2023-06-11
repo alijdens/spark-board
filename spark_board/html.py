@@ -1,6 +1,7 @@
 import os
 import shutil
 import json
+import dataclasses
 
 from .plan_extractor import plan_parser, dag
 from .plan_extractor.plan_parser import NodeType, NodeColumn
@@ -11,6 +12,8 @@ from typing import Dict, Any, List, Tuple
 # string template to build the JS file containing the graph definition as nodes
 # and links objects required by the framework that will draw them
 MODEL_FILE_TEMPLATE = """
+const model_defaultSettings = {settings};
+
 const model_initialNodes = {nodes};
 
 const model_initialEdges = {links};
@@ -23,7 +26,15 @@ class Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)    
 
 
-def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
+@dataclasses.dataclass
+class DefaultSettings:
+    """Default settings for the HTML DAG renderer."""
+
+    animationEnabled: bool = True
+    animationEnabledOnDrag: bool = True
+
+
+def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings) -> None:
     """Create a visual representation of the given `dag` in HTML. The HTML
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists."""
@@ -34,6 +45,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool) -> None:
     model_file = MODEL_FILE_TEMPLATE.format(
         nodes=json.dumps(nodes, indent=4, cls=Encoder),
         links=json.dumps(links, indent=4),
+        settings=json.dumps(dataclasses.asdict(default_settings), indent=4),
     )
 
     if overwrite and os.path.exists(output_dir):
@@ -66,11 +78,10 @@ def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
             "tree_string": column.tree_string,
             "linked_columns": [_get_column_id(link) for link in column.links]
         },
-        "position": {"x": 0, "y": 25}
     } 
 
 
-def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, positions: Dict[plan_parser.Node, dag.Position]) -> Dict[str, object]:
+def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
         NodeType.Project: 'Project',
@@ -98,7 +109,6 @@ def _transformation_as_dict(data: dag.DFSNodeData, node: plan_parser.Node, posit
             **node.metadata,
             "columns": [_column_as_dict(column) for column in node.columns.values()],
         },
-        "position": positions[node],
     }
 
 
@@ -124,11 +134,9 @@ def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -
 def get_nodes_and_links(tree: plan_parser.Node) -> Tuple[List[Any], List[Any]]:
     """Convert the tree into a list of nodes and links for the HTML DAG."""
 
-    positions = dag.build_layout(tree)
-
     transformation_nodes, transformation_links, column_nodes, column_links = [], [], [], []
     for data, node in dag.dfs(tree):
-        transformation_nodes.append(_transformation_as_dict(data, node, positions))
+        transformation_nodes.append(_transformation_as_dict(node))
         # if the parent is None, it means we are at the root of the tree
         if data.parent_id is not None:
             transformation_links.append(_transofmations_link_as_dict(data, node))

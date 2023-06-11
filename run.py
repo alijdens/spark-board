@@ -20,4 +20,9 @@ if __name__ == "__main__":
     example = __import__(f"tests.examples.{args.example}", fromlist=["df"])
 
     here = os.path.dirname(__file__)
-    html.dump_dataframe(example.df, os.path.join(here, args.output), args.overwrite)
+    html.dump_dataframe(
+        df=example.df,
+        output_dir=os.path.join(here, args.output),
+        overwrite=args.overwrite,
+        default_settings=html.DefaultSettings(),
+    )
