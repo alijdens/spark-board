@@ -27,3 +27,9 @@
 .multiline {
   white-space: pre-wrap;
 }
+
+.columntooltip {
+  font-family: monospace;
+  overflow: auto;
+  max-height: 50vh;
+}

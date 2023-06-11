@@ -1,6 +1,8 @@
 import { useCollapse } from 'react-collapsed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleChevronUp, faCircleChevronDown } from '@fortawesome/free-solid-svg-icons'
+import Tooltip from '@mui/material/Tooltip';
+
 import "./sidebar.css";
 
 
@@ -12,7 +14,7 @@ function Section(props) {
     const { getCollapseProps, getToggleProps, isExpanded } = useCollapse(config);
 
     return (
-        <div className="sidebar__collapsible">
+        <div className="sidebar__collapsible" hidden={props.hidden} >
             <div className="header" {...getToggleProps()}>
                 <div className="title">{props.title}</div>
                 <FontAwesomeIcon icon={isExpanded ? faCircleChevronUp : faCircleChevronDown} />
@@ -83,7 +85,7 @@ function transformationData(transformationNode) {
     }
 }
 
-function SideBar({ width, node, onSelectedColumnChange }) {
+function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
     if (!node) {
         // if no node is selected, do not render the sidebar
         return <div></div>
@@ -96,9 +98,16 @@ function SideBar({ width, node, onSelectedColumnChange }) {
                     node.data.columns.map((col) => {
                         return (
                             <div key={col.id}>
-                                <button onClick={(event) => onSelectedColumnChange(col)}>
-                                    {col.data.name} ({col.data.id}) - ({col.data.type})
-                                </button>
+                                <Tooltip title=
+                                {
+                                    <div className="multiline columntooltip">
+                                            {col.data.tree_string}
+                                    </div>
+                                } placement={"right"} >
+                                    <button style={{textAlign: "left"}} onClick={(event) => onSelectedColumnChange(col)}>
+                                        {col.data.name} ({col.data.id}) - ({col.data.type})
+                                    </button>
+                                </Tooltip>
                             </div>
                         )
                     }
@@ -107,6 +116,11 @@ function SideBar({ width, node, onSelectedColumnChange }) {
             </Section>
             <Section title="Transformation data">
                 { transformationData(node) }
+            </Section>
+            <Section title="Column Tree" hidden={node == null || selectedColumn == null} defaultExpanded>
+                <div className="multiline" style={{fontFamily: "monospace"}}>
+                    {selectedColumn != null ? selectedColumn.data.tree_string : "This text shouldn't be shown!"}
+                </div>
             </Section>
        </div>
     )
