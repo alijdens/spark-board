@@ -43,7 +43,7 @@ export function createSystem(nodes, edges, targetPositions, nodeIdMapping, mass)
     }))
 
     // initialize the real node positions and velocities
-    for(let [id, i] of nodeIdMapping) {
+    for (let [id, i] of nodeIdMapping) {
         const node = nodesById.get(id).n;
 
         positions[i * 2] = node.position.x;
@@ -56,7 +56,7 @@ export function createSystem(nodes, edges, targetPositions, nodeIdMapping, mass)
     // now initialize the artificial nodes to have the target position
     // of the real nodes in the layout and infinite mass so they pull
     // the real nodes towards their target position
-    for(let [id, i] of nodeIdMapping) {
+    for (let [id, i] of nodeIdMapping) {
         const node = nodesById.get(id).n;
 
         const nid = i + nodeIdMapping.size;
@@ -97,11 +97,11 @@ export function getSprings(targetPositions, nodeIdMapping, adjList, nodes) {
         (node) => [node.id, {i: nodeIdMapping.get(node.id), n: node}])
     );
 
-    for(let [id, i] of nodeIdMapping) {
+    for (let [id, i] of nodeIdMapping) {
         // if the node has a connection, we link them together with a spring
         // the spring will have the same length as the distance between the nodes
         // in the final layout
-        for(let [otherId, otherNode] of nodesById) {
+        for (let [otherId, otherNode] of nodesById) {
             if (!adjList.get(i).includes(otherNode.i)) {
                 continue;
             }

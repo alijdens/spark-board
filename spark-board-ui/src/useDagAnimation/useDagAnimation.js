@@ -95,6 +95,9 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
             return () => cancelAnimationFrame(animationId.current);
         },
 
+        // pause the animation (make it not consider elasped time)
+        pause: () => startT.current = null,
+
         // function that updates the node positions (not the target positions)
         updatePositions: (positions) => setPositions(positions, state, nodeIdMapping),
 
