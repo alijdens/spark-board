@@ -2,7 +2,7 @@ import { useCollapse } from 'react-collapsed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleChevronUp, faCircleChevronDown } from '@fortawesome/free-solid-svg-icons'
 import Tooltip from '@mui/material/Tooltip';
-import SparkBoardLogo from '../Logo.svg';
+import SparkBoardLogo from '../logo.png';
 
 
 import "./sidebar.css";
