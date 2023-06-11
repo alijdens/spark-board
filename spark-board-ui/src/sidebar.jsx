@@ -2,6 +2,8 @@ import { useCollapse } from 'react-collapsed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleChevronUp, faCircleChevronDown } from '@fortawesome/free-solid-svg-icons'
 import Tooltip from '@mui/material/Tooltip';
+import SparkBoardLogo from '../Logo.svg';
+
 
 import "./sidebar.css";
 
@@ -88,10 +90,14 @@ function transformationData(transformationNode) {
 function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
     if (!node) {
         // if no node is selected, do not render the sidebar
-        return <div></div>
+        return <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
+            <img src={ SparkBoardLogo } style={{width: width, minWidth: width}} />
+            <h3 style={{textAlign: "center"}}>Just select one node!</h3>
+        </div>
     }
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
+            <img src={ SparkBoardLogo } style={{width: width, minWidth: width}} />
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
             <Section title="Output Columns" defaultExpanded="true">
                 {
