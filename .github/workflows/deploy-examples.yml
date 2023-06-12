@@ -1,0 +1,71 @@
+name: Deploy examples
+
+on:
+  push:
+    branches:
+      - main
+      - ci/*
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+      
+jobs:
+  Build:
+    runs-on: ubuntu-22.04
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.7'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre default-jdk
+
+        pip install pipenv==2023.4.29
+        pipenv sync
+
+    - name: Build examples
+      run: |
+        pipenv run python ./scripts/build_examples.py --output ./examples
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@master
+      with:
+        name: page
+        path: ./examples
+        if-no-files-found: error
+    
+  Deploy:
+    runs-on: ubuntu-22.04
+    needs: Build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Collect artifacts
+      uses: actions/download-artifact@master
+      with:
+        name: page
+        path: ./examples
+
+    - name: Setup pages
+      uses: actions/configure-pages@v1
+
+    - name: Upload artifacts to pages
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: ./examples
+
+    - name: Deploy to pages
+      id: deployment
+      uses: actions/deploy-pages@main
