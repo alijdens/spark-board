@@ -119,12 +119,16 @@ class NodeParser(object):
         children = [parse_transformation(child) for child in iterate_java_object(java_node.children())]
         columns = self._parse_columns(java_node, children)
 
-        return Node(
+        node = Node(
             type=self._get_type(),
             metadata=metadata,
             children=children,
             columns=columns
         )
+        for column in columns.values():
+            column.node_id = node.id
+
+        return node
 
     def _get_columns(self, java_node: JavaObject) -> JavaObject:
         return java_node.output()
@@ -158,7 +162,7 @@ class NodeParser(object):
             name=column_name,
             id=column_id,
             type=data_type,
-            node_id=id(self),
+            node_id=None,
             links=links,
             tree_string=tree_string
         )
