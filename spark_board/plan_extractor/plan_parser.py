@@ -35,11 +35,14 @@ Metadata = Dict[str, Any]
 
 @dataclasses.dataclass
 class Node:
-    id: int
     type: NodeType
     metadata: Metadata  # TODO: make it more node-type specific
     children: List['Node']
     columns: Dict[int, NodeColumn]
+
+    @property
+    def id(self) -> int:
+        return id(self)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Node):
@@ -112,7 +115,6 @@ class NodeParser(object):
         columns = self._parse_columns(java_node, children)
 
         return Node(
-            id=id(self),
             type=self._get_type(),
             metadata=metadata,
             children=children,
