@@ -4,15 +4,15 @@
 
 import { Handle, Position } from 'reactflow';
 
-import DocumentIcon from './assets/document.svg';
 import FilterIcon from './assets/filter.svg';
-import DefaultIcon from './assets/general processor.jpg';
 import GroupIcon from './assets/group.svg';
 import JoinIcon from './assets/join.svg';
 import ProjectIcon from './assets/project.svg';
 import SortIcon from './assets/sort.svg';
 import TableIcon from './assets/table.svg';
 import UploadIcon from './assets/upload.svg';
+import UnionIcon from './assets/union.png';
+import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
 function TransformationNode({ data }) {
@@ -66,6 +66,12 @@ export function getTransformationStyle(transformationType) {
 
         case "Window":
             return ["pink", TableIcon];
+
+        case "Union":
+            return ["brown", UnionIcon];
+
+        case "Limit":
+            return ["lightgreen", GlobalLimitIcon];
     }
 
     throw new Error("Unknown transformation type: " + transformationType);

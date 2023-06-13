@@ -15,6 +15,8 @@ class NodeType(enum.Enum):
     Aggregate = "aggregate"
     Window = "window"
     Sort = "sort"
+    Union = "union"
+    Limit = "limit"
 
 
 @dataclasses.dataclass
@@ -87,6 +89,9 @@ def parse_transformation(node: JavaObject) -> Node:
         "Aggregate": AggregateParser(),
         "Window": WindowParser(),
         "Sort": SortParser(),
+        "Union": UnionParser(),
+        "GlobalLimit": GlobalLimitParser(),
+        "LocalLimit": GlobalLimitParser(),  # TODO: is this correct?
         # "relation": RelationParser(),
     }
     parser = parsers.get(node.nodeName())
@@ -270,6 +275,30 @@ class SortParser(NodeParser):
 
     def _get_type(self) -> NodeType:
         return NodeType.Sort
+
+    def _expected_number_of_nodes(self) -> int:
+        return 1
+
+
+class UnionParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        # TODO: parse metadata
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Union
+
+    def _expected_number_of_nodes(self) -> int:
+        return 2
+
+
+class GlobalLimitParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        # metadata["limit"] = TODO: parse limit
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Limit
 
     def _expected_number_of_nodes(self) -> int:
         return 1

@@ -91,7 +91,9 @@ def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
         NodeType.Aggregate: 'Group',
         NodeType.Join: 'Join',
         NodeType.Sort: 'Sort',
-        NodeType.Window: 'Window'
+        NodeType.Window: 'Window',
+        NodeType.Union: 'Union',
+        NodeType.Limit: 'Limit',
     }
 
     return {
