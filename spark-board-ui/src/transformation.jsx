@@ -31,7 +31,7 @@ function TransformationNode({ data }) {
             <div className={ classes.join(" ") } style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
-                <img src={ icon } />
+                <img src={ icon } width="50" height="50" />
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>
