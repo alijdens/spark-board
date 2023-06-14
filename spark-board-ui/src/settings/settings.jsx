@@ -39,7 +39,7 @@ export function Settings({ settings, setSetting }) {
 
     // add some background to the settings pannel
     const style = {
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        backgroundColor: "rgba(128, 128, 128, 0.2)",
         borderRadius: "5px",
         padding: "10px",
     };
