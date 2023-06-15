@@ -2,7 +2,7 @@ import enum
 import dataclasses
 from py4j.java_gateway import JavaObject
 from pyspark.sql import DataFrame
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any, Generator, Optional
 
 
 class NodeType(enum.Enum):
@@ -24,7 +24,7 @@ class NodeColumn(object):
     name: str
     id: int
     type: str
-    node_id: int
+    node_id: Optional[int]
     tree_string: str
 
     # List of the columns in previous nodes which form this column. This can be used
