@@ -91,7 +91,9 @@ def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
         NodeType.Aggregate: 'Group',
         NodeType.Join: 'Join',
         NodeType.Sort: 'Sort',
-        NodeType.Window: 'Window'
+        NodeType.Window: 'Window',
+        NodeType.Union: 'Union',
+        NodeType.Limit: 'Limit',
     }
 
     return {
@@ -112,9 +114,9 @@ def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
     }
 
 
-def _transofmations_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) -> Dict[str, object]:
+def _transformation_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) -> Dict[str, object]:
     return {
-        "id": f"{node.id}-{node.id}",
+        "id": f"{data.parent_id}-{node.id}",
         "source": str(data.parent_id),
         "target": str(node.id),
     }
@@ -139,7 +141,7 @@ def get_nodes_and_links(tree: plan_parser.Node) -> Tuple[List[Any], List[Any]]:
         transformation_nodes.append(_transformation_as_dict(node))
         # if the parent is None, it means we are at the root of the tree
         if data.parent_id is not None:
-            transformation_links.append(_transofmations_link_as_dict(data, node))
+            transformation_links.append(_transformation_link_as_dict(data, node))
 
         for column in node.columns.values():
             column_nodes.append(_column_as_dict(column))

@@ -2,7 +2,7 @@ import enum
 import dataclasses
 from py4j.java_gateway import JavaObject
 from pyspark.sql import DataFrame
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any, Generator, Optional
 
 
 class NodeType(enum.Enum):
@@ -15,6 +15,8 @@ class NodeType(enum.Enum):
     Aggregate = "aggregate"
     Window = "window"
     Sort = "sort"
+    Union = "union"
+    Limit = "limit"
 
 
 @dataclasses.dataclass
@@ -22,7 +24,7 @@ class NodeColumn(object):
     name: str
     id: int
     type: str
-    node_id: int
+    node_id: Optional[int]
     tree_string: str
 
     # List of the columns in previous nodes which form this column. This can be used
@@ -35,11 +37,14 @@ Metadata = Dict[str, Any]
 
 @dataclasses.dataclass
 class Node:
-    id: int
     type: NodeType
     metadata: Metadata  # TODO: make it more node-type specific
     children: List['Node']
     columns: Dict[int, NodeColumn]
+
+    @property
+    def id(self) -> int:
+        return id(self)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Node):
@@ -84,6 +89,9 @@ def parse_transformation(node: JavaObject) -> Node:
         "Aggregate": AggregateParser(),
         "Window": WindowParser(),
         "Sort": SortParser(),
+        "Union": UnionParser(),
+        "GlobalLimit": GlobalLimitParser(),
+        "LocalLimit": GlobalLimitParser(),  # TODO: is this correct?
         # "relation": RelationParser(),
     }
     parser = parsers.get(node.nodeName())
@@ -111,13 +119,16 @@ class NodeParser(object):
         children = [parse_transformation(child) for child in iterate_java_object(java_node.children())]
         columns = self._parse_columns(java_node, children)
 
-        return Node(
-            id=id(self),
+        node = Node(
             type=self._get_type(),
             metadata=metadata,
             children=children,
             columns=columns
         )
+        for column in columns.values():
+            column.node_id = node.id
+
+        return node
 
     def _get_columns(self, java_node: JavaObject) -> JavaObject:
         return java_node.output()
@@ -151,7 +162,7 @@ class NodeParser(object):
             name=column_name,
             id=column_id,
             type=data_type,
-            node_id=id(self),
+            node_id=None,
             links=links,
             tree_string=tree_string
         )
@@ -268,6 +279,30 @@ class SortParser(NodeParser):
 
     def _get_type(self) -> NodeType:
         return NodeType.Sort
+
+    def _expected_number_of_nodes(self) -> int:
+        return 1
+
+
+class UnionParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        # TODO: parse metadata
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Union
+
+    def _expected_number_of_nodes(self) -> int:
+        return 2
+
+
+class GlobalLimitParser(NodeParser):
+    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        # metadata["limit"] = TODO: parse limit
+        pass
+
+    def _get_type(self) -> NodeType:
+        return NodeType.Limit
 
     def _expected_number_of_nodes(self) -> int:
         return 1
