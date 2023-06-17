@@ -58,14 +58,7 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
             return node;
         }).map((node) => {
             if (node.type == "transformation") {
-                if (node.id in visitedTransformationNodes) {
-                    let h = max(120, 90 + visitedTransformationNodes[node.id] * 15);
-                    node.data.height = h;
-                    node.style = { ...node.style, height: h };
-                } else {
-                    node.data.height = 120;
-                    node.style = { ...node.style, height: 120 };
-                }
+                return applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes);
             }
             return node;
         });
@@ -121,6 +114,18 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
         currentNode.hidden = true;
     }
     return currentNode;
+}
+
+function applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes) {
+    if (node.id in visitedTransformationNodes) {
+        let h = max(120, 90 + visitedTransformationNodes[node.id] * 15);
+        node.data.height = h;
+        node.style = { ...node.style, height: h };
+    } else {
+        node.data.height = 120;
+        node.style = { ...node.style, height: 120 };
+    }
+    return node;
 }
 
 function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking) {

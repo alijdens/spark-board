@@ -18,8 +18,6 @@ import './App.css'
 export default function App() {
     const { fitBounds } = useReactFlow();
 
-    const [shouldReacomodate, setShouldReacomodate] = React.useState(false);
-
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
     // want to have multiple "selected nodes"
     const [selectedTransformation, setSelectedTransformation] = React.useState(null);

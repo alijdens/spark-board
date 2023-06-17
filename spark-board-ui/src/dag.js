@@ -61,9 +61,7 @@ export function buildLayout(root_id, edges) {
 
             node_pos.x = depth * 200;
         }
-        let result = { y: node_pos.y, height: nodeElem.offsetHeight };
-        console.log("Calculated position for node " + node_id + ": " + JSON.stringify(result));
-        return result;        
+        return { y: node_pos.y, height: nodeElem.offsetHeight };
     }
 
     _calculate_position(root_id, 0);
