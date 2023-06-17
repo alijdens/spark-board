@@ -61,10 +61,12 @@ export function buildLayout(root_id, edges) {
 
             node_pos.x = depth * 200;
         }
-        return { y: node_pos.y, height: nodeElem.offsetHeight };
+        let result = { y: node_pos.y, height: nodeElem.offsetHeight };
+        console.log("Calculated position for node " + node_id + ": " + JSON.stringify(result));
+        return result;        
     }
 
-    _calculate_position(root_id, 0)
+    _calculate_position(root_id, 0);
 
     // calculate the total width and height of the DAG by finding the
     // lefmost and bottommost nodes
@@ -80,7 +82,7 @@ export function buildLayout(root_id, edges) {
         height: totalH,
     }
 
-    // center the DAG arounf the origin
+    // center the DAG around the origin
     for(const [_, pos] of positions) {
         pos.x -= totalW / 2;
         pos.y -= totalH / 2;

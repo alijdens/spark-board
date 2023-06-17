@@ -46,12 +46,24 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
     , [selectedColumn]);
 
     // Effect over column nodes when a column is selected to show its graph
-    useEffect(() => setNodes((nds) => nds.map((node) => {
-        if (node.type == "column") {
-            return applyColumnNodeEffectOnColumnTrackingChanged(node, columnGraph);
-        }
-        return node;
-    })), [columnGraph]);
+    useEffect(() => setNodes((nds) => {
+        let visitedTransformationNodes = {};
+        return nds.map((node) => {
+            if (node.type == "column") {
+                return applyColumnNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes);
+            }
+            return node;
+        }).map((node) => {
+            if (node.type == "transformation") {
+                if (node.id in visitedTransformationNodes) {
+                    node.style = { ...node.style, height: max(120, 90 + visitedTransformationNodes[node.id] * 15) };
+                } else {
+                    node.style = { ...node.style, height: 120 };
+                }
+            }
+            return node;
+        });
+    }), [columnGraph]);
 
     // Effect over edges for the selected column graph
     useEffect(() => setEdges((eds) => eds.map((edge) => {
@@ -62,6 +74,10 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
         }
         return edge;
     })), [columnGraph]);
+}
+
+function max(a, b) {
+    return a > b ? a : b;
 }
 
 
@@ -86,10 +102,17 @@ function buildColumnGraph(nodesById, column) {
     )).flat();
 }
 
-function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTracking) {
+function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTracking, visitedTransformationNodes) {
     if (columnTracking.includes(currentNode.id)) {
+        if (currentNode.parentNode in visitedTransformationNodes) {
+            visitedTransformationNodes[currentNode.parentNode] = visitedTransformationNodes[currentNode.parentNode] + 1;
+        } else {
+            visitedTransformationNodes[currentNode.parentNode] = 1;
+        }
+        currentNode.position = {"x": 10, "y": 25 * visitedTransformationNodes[currentNode.parentNode]};
         currentNode.hidden = false;
     } else {
+        currentNode.position = {"x": 10, "y": 0};
         currentNode.hidden = true;
     }
     return currentNode;

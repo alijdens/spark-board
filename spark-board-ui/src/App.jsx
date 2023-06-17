@@ -18,6 +18,8 @@ import './App.css'
 export default function App() {
     const { fitBounds } = useReactFlow();
 
+    const [shouldReacomodate, setShouldReacomodate] = React.useState(false);
+
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
     // want to have multiple "selected nodes"
     const [selectedTransformation, setSelectedTransformation] = React.useState(null);
@@ -35,7 +37,13 @@ export default function App() {
             selectedTransformation !== null && selectedTransformation.data == node.data
         );
 
-        node.position = (node.type == "transformation" ? {x: 0, y: 0} : {x: 0, y: 25});
+        if (node.position === undefined) {
+            node.position = (node.type == "transformation" ? {x: 0, y: 0} : {x: 0, y: 25});
+        }
+
+        if (node.type == "column") {
+            node.draggable = false;
+        }
     });
     const [settings, setSetting] = useSettings(model_defaultSettings);
 
@@ -53,6 +61,9 @@ export default function App() {
     ));
     const nodesInitialized = useNodesInitialized();
     const animation = useDagAnimation(nodes, edges, transformationNodePositions, setNodes);
+
+    // controls the column for which the column graph is shown
+    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
 
     // this function will start or stop the animation based on the settings
     useEffect(() => {
@@ -97,10 +108,8 @@ export default function App() {
                 return node;
             }));
         }
-    }, [settings, nodes, setNodes]);
-
-    // controls the column for which the column graph is shown
-    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
+        setSelectedColumn(selectedColumn);
+    }, [settings, nodes, setNodes, setSelectedColumn]);
 
     // Map containing all nodes, both transformations and columns
     const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);

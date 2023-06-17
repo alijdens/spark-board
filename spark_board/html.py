@@ -62,7 +62,6 @@ def _column_as_dict(column: TransformationColumn) -> Dict[str, object]:
         "id": _get_column_id(column),
         "type": "column",
         "parentNode": str(column.node_id),
-        "extent": "parent",
         "expandParent": True,
         "data": {
             "id": column.id,
