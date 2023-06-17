@@ -110,8 +110,10 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
         }
         currentNode.position = {"x": 10, "y": 25 * visitedTransformationNodes[currentNode.parentNode]};
         currentNode.hidden = false;
+        currentNode.style = { ...currentNode.style };
     } else {
         currentNode.hidden = true;
+        currentNode.style = { ...currentNode.style };
     }
     return currentNode;
 }
