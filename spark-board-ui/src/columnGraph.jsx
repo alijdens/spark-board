@@ -40,6 +40,9 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
     // the column graph will contain the column node IDs that are related to the selected column
     const [columnGraph, setColumnGraph] = React.useState([]);
 
+    // Map containing all nodes, both transformations and columns
+    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
+
     // find the selected column graph
     useEffect(() =>
         setColumnGraph(buildColumnGraph(nodesById, selectedColumn))
@@ -56,8 +59,11 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
         }).map((node) => {
             if (node.type == "transformation") {
                 if (node.id in visitedTransformationNodes) {
-                    node.style = { ...node.style, height: max(120, 90 + visitedTransformationNodes[node.id] * 15) };
+                    let h = max(120, 90 + visitedTransformationNodes[node.id] * 15);
+                    node.data.height = h;
+                    node.style = { ...node.style, height: h };
                 } else {
+                    node.data.height = 120;
                     node.style = { ...node.style, height: 120 };
                 }
             }
@@ -112,7 +118,6 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
         currentNode.position = {"x": 10, "y": 25 * visitedTransformationNodes[currentNode.parentNode]};
         currentNode.hidden = false;
     } else {
-        currentNode.position = {"x": 10, "y": 0};
         currentNode.hidden = true;
     }
     return currentNode;

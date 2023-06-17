@@ -28,6 +28,7 @@ function TransformationNode({ data }) {
 
     const nodeStyle = {
         backgroundColor: color,
+        height: data.height,
     }
 
     let classes = ["transformation-node__container"];
