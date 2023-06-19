@@ -7,15 +7,15 @@ from .py4j_utils import iterate_java_object
 
 class TransformationNodeBuilder(object):
 
-    def parse(self, java_node: JavaObject) -> TransformationNode:
+    def build(self, java_node: JavaObject) -> TransformationNode:
         assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
 
         metadata: Dict[str, str] = {}
-        self._parse_common_metadata(java_node, metadata)
-        self._parse_metadata(java_node, metadata)
+        self._extract_common_metadata(java_node, metadata)
+        self._extract_metadata(java_node, metadata)
 
         children = [build_dag_from_java_object(child) for child in iterate_java_object(java_node.children())]
-        columns = self._parse_columns(java_node, children)
+        columns = self._extract_columns(java_node, children)
 
         node = TransformationNode(
             type=self._get_type(),
@@ -31,15 +31,15 @@ class TransformationNodeBuilder(object):
     def _get_columns(self, java_node: JavaObject) -> JavaObject:
         return java_node.output()
 
-    def _parse_columns(self, java_node: JavaObject, children: List[TransformationNode]) -> Dict[int, TransformationColumn]:
+    def _extract_columns(self, java_node: JavaObject, children: List[TransformationNode]) -> Dict[int, TransformationColumn]:
         columns = {}
         for java_column in iterate_java_object(self._get_columns(java_node)):
             column_id = java_column.exprId().id()
-            parsed_column = self._parse_column(java_column, children)
+            parsed_column = self._extract_column(java_column, children)
             columns[column_id] = parsed_column
         return columns
 
-    def _parse_column(self, java_column: JavaObject, children: List[TransformationNode]) -> TransformationColumn:
+    def _extract_column(self, java_column: JavaObject, children: List[TransformationNode]) -> TransformationColumn:
         if java_column.nodeName() not in ["Alias", "AttributeReference"]:
             raise NotImplementedError(f"Project column type not supported: {java_column.nodeName()}")
 
@@ -65,10 +65,10 @@ class TransformationNodeBuilder(object):
             tree_string=tree_string
         )
 
-    def _parse_common_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_common_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["schema_string"] = node.schemaString()
 
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         pass
 
     def _get_type(self) -> TransformationType:
@@ -79,7 +79,7 @@ class TransformationNodeBuilder(object):
 
 
 class ProjectNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: Something besides the columns?
         pass
 
@@ -94,7 +94,7 @@ class ProjectNodeBuilder(TransformationNodeBuilder):
 
 
 class FilterNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["condition"] = node.condition().sql()
 
     def _get_type(self) -> TransformationType:
@@ -105,7 +105,7 @@ class FilterNodeBuilder(TransformationNodeBuilder):
 
 
 class LogicalRDDNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: collect metadata about RDD columns
         pass
 
@@ -117,7 +117,7 @@ class LogicalRDDNodeBuilder(TransformationNodeBuilder):
 
 
 class JoinNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["condition"] = node.condition().toString()
         metadata["join_type"] = node.joinType().toString()
 
@@ -129,7 +129,7 @@ class JoinNodeBuilder(TransformationNodeBuilder):
 
 
 class GenerateNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["generator"] = node.generator().sql()
 
     def _get_type(self) -> TransformationType:
@@ -140,7 +140,7 @@ class GenerateNodeBuilder(TransformationNodeBuilder):
 
 
 class AggregateNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         aggregate_expressions = []
         for aggregate_expression in iterate_java_object(node.aggregateExpressions()):
             aggregate_expressions.append(aggregate_expression.sql())
@@ -160,7 +160,7 @@ class AggregateNodeBuilder(TransformationNodeBuilder):
 
 
 class WindowNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: parse metadata
         pass
 
@@ -172,7 +172,7 @@ class WindowNodeBuilder(TransformationNodeBuilder):
 
 
 class SortNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["order"] = [c.sql() for c in iterate_java_object(node.order())]
 
     def _get_type(self) -> TransformationType:
@@ -183,7 +183,7 @@ class SortNodeBuilder(TransformationNodeBuilder):
 
 
 class UnionNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: parse metadata
         pass
 
@@ -195,7 +195,7 @@ class UnionNodeBuilder(TransformationNodeBuilder):
 
 
 class GlobalLimitNodeBuilder(TransformationNodeBuilder):
-    def _parse_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # metadata["limit"] = TODO: parse limit
         pass
 
@@ -227,4 +227,4 @@ def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
     if not builder:
         raise NotImplementedError(f"Transformation not supported: '{node.nodeName()}'")
 
-    return builder.parse(node)
+    return builder.build(node)
