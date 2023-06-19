@@ -1,1 +1,1 @@
-from .plan_parser import build_tree
+from .dag_builder import build_dag

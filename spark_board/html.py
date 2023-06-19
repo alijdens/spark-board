@@ -3,8 +3,10 @@ import shutil
 import json
 import dataclasses
 
-from .plan_extractor import plan_parser, dag
-from .plan_extractor.plan_parser import NodeType, NodeColumn
+from .plan_extractor import dag
+from .plan_extractor.dag_builder import build_dag
+from .plan_extractor.transformations_dag import TransformationColumn, TransformationNode, TransformationType
+
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple
 
@@ -21,8 +23,6 @@ const model_initialEdges = {links};
 
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
-        if isinstance(o, dag.Position):
-            return {"x": o.x, "y": o.y}
         return json.JSONEncoder.default(self, o)    
 
 
@@ -39,7 +39,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists."""
 
-    tree = plan_parser.build_tree(df=df)
+    tree = build_dag(df=df)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
@@ -60,11 +60,11 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
         fp.write(model_file)
 
 
-def _get_column_id(column: plan_parser.NodeColumn) -> str:
+def _get_column_id(column: TransformationColumn) -> str:
     return f"{str(column.node_id)}->{str(column.id)}"
 
 
-def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
+def _column_as_dict(column: TransformationColumn) -> Dict[str, object]:
     return {
         "id": _get_column_id(column),
         "type": "column",
@@ -81,19 +81,19 @@ def _column_as_dict(column: plan_parser.NodeColumn) -> Dict[str, object]:
     } 
 
 
-def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
+def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
-        NodeType.Project: 'Project',
-        NodeType.Filter: 'Filter',
-        NodeType.LogicalRDD: 'Table',
-        NodeType.Generate: 'Transform',
-        NodeType.Aggregate: 'Group',
-        NodeType.Join: 'Join',
-        NodeType.Sort: 'Sort',
-        NodeType.Window: 'Window',
-        NodeType.Union: 'Union',
-        NodeType.Limit: 'Limit',
+        TransformationType.Project: 'Project',
+        TransformationType.Filter: 'Filter',
+        TransformationType.LogicalRDD: 'Table',
+        TransformationType.Generate: 'Transform',
+        TransformationType.Aggregate: 'Group',
+        TransformationType.Join: 'Join',
+        TransformationType.Sort: 'Sort',
+        TransformationType.Window: 'Window',
+        TransformationType.Union: 'Union',
+        TransformationType.Limit: 'Limit',
     }
 
     return {
@@ -114,7 +114,7 @@ def _transformation_as_dict(node: plan_parser.Node) -> Dict[str, object]:
     }
 
 
-def _transformation_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) -> Dict[str, object]:
+def _transformation_link_as_dict(data: dag.DFSNodeData, node: TransformationNode) -> Dict[str, object]:
     return {
         "id": f"{data.parent_id}-{node.id}",
         "source": str(data.parent_id),
@@ -122,7 +122,7 @@ def _transformation_link_as_dict(data: dag.DFSNodeData, node: plan_parser.Node) 
     }
 
 
-def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -> Dict[str, Any]:
+def _column_link_as_dict(source_column: TransformationColumn, target_column: TransformationColumn) -> Dict[str, Any]:
     source = f"{str(source_column.node_id)}->{str(source_column.id)}"
     target = f"{str(target_column.node_id)}->{str(target_column.id)}"
     return {
@@ -133,7 +133,7 @@ def _column_link_as_dict(source_column: NodeColumn, target_column: NodeColumn) -
     }
 
 
-def get_nodes_and_links(tree: plan_parser.Node) -> Tuple[List[Any], List[Any]]:
+def get_nodes_and_links(tree: TransformationNode) -> Tuple[List[Any], List[Any]]:
     """Convert the tree into a list of nodes and links for the HTML DAG."""
 
     transformation_nodes, transformation_links, column_nodes, column_links = [], [], [], []

@@ -9,7 +9,8 @@ from typing import List
 
 from tests.context import spark
 
-from spark_board.plan_extractor.plan_parser import build_tree, Node, NodeType
+from spark_board.plan_extractor.dag_builder import build_dag
+from spark_board.plan_extractor.transformations_dag import TransformationNode, TransformationType
 
 import unittest
 
@@ -28,7 +29,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- age: integer (nullable = true)\n"
                   " |-- user DNI: integer (nullable = true)\n")
 
-        project = build_tree(df)
+        project = build_dag(df)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=["name", "age", "user DNI"])
 
         schema = ("root\n"
@@ -58,7 +59,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |    |-- element: string (containsNull = true)\n"
                   " |-- car: string (nullable = true)\n")
 
-        project = build_tree(df)
+        project = build_dag(df)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'cars', 'car'])
 
         generate = project.children[0]
@@ -80,7 +81,7 @@ class PlanParserTestSuite(unittest.TestCase):
             F.avg(df.height).alias("avg_height"),
         )
 
-        aggregate = build_tree(df)
+        aggregate = build_dag(df)
 
         schema = ("root\n"
                   " |-- city: string (nullable = true)\n"
@@ -109,7 +110,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- city: string (nullable = true)\n"
                   " |-- zip_code: string (nullable = true)\n")
 
-        project = build_tree(df)
+        project = build_dag(df)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['name', 'age', 'city', 'zip_code'])
 
         schema = ("root\n"
@@ -179,7 +180,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- date: string (nullable = true)\n"
                   " |-- rolling_avg: double (nullable = true)\n")
 
-        project = build_tree(df)
+        project = build_dag(df)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['revenue', 'date', 'rolling_avg'])
 
         schema = ("root\n"
@@ -225,7 +226,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- savings: double (nullable = true)\n"
                   " |-- chocolate_money: double (nullable = true)\n")
 
-        project = build_tree(df)
+        project = build_dag(df)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['user', 'income', 'expenses', 'surplus', 'savings', 'chocolate_money'])
 
         schema = ("root\n"
@@ -264,15 +265,15 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- income: double (nullable = true)\n"
                   " |-- expenses: double (nullable = true)\n")
 
-        sort = build_tree(df)
+        sort = build_dag(df)
         self._expect_sort(node=sort, expected_schema=schema, expected_order=['income ASC NULLS FIRST', 'expenses DESC NULLS LAST'])
 
         rdd = sort.children[0]
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def _expect_project(self, node: Node, expected_schema: str, expected_column_names: List[str]) -> None:
-        assert node.type == NodeType.Project, f'Expected Project node but "{node.type}" found'
+    def _expect_project(self, node: TransformationNode, expected_schema: str, expected_column_names: List[str]) -> None:
+        assert node.type == TransformationType.Project, f'Expected Project node but "{node.type}" found'
 
         found_columns = node.columns.values()
         found_col_names = [col.name for col in found_columns]
@@ -282,8 +283,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_filter(self, node: Node, expected_schema: str, expected_condition: str) -> None:
-        assert node.type == NodeType.Filter, f'Expected Filter node but "{node.type}" found'
+    def _expect_filter(self, node: TransformationNode, expected_schema: str, expected_condition: str) -> None:
+        assert node.type == TransformationType.Filter, f'Expected Filter node but "{node.type}" found'
         
         assert node.metadata['condition'] == expected_condition
         assert node.metadata['schema_string'] == expected_schema
@@ -291,8 +292,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_rdd(self, node: Node, expected_schema: str) -> None:
-        assert node.type == NodeType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
+    def _expect_rdd(self, node: TransformationNode, expected_schema: str) -> None:
+        assert node.type == TransformationType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
 
         # TODO: assert metadata
         assert node.metadata['schema_string'] == expected_schema
@@ -300,8 +301,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 0
 
 
-    def _expect_generate(self, node: Node, expected_schema: str, expected_generator: str) -> None:
-        assert node.type == NodeType.Generate, f'Expected Generate node but "{node.type}" found'
+    def _expect_generate(self, node: TransformationNode, expected_schema: str, expected_generator: str) -> None:
+        assert node.type == TransformationType.Generate, f'Expected Generate node but "{node.type}" found'
 
         assert node.metadata['generator'] == expected_generator
         assert node.metadata['schema_string'] == expected_schema
@@ -309,8 +310,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_aggregate(self, node: Node, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str]) -> None:
-        assert node.type == NodeType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
+    def _expect_aggregate(self, node: TransformationNode, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str]) -> None:
+        assert node.type == TransformationType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
 
         assert node.metadata['aggregate_expressions'] == expected_aggregate_expressions
         assert node.metadata['grouping_expressions'] == expected_grouping_expressions
@@ -319,8 +320,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_join(self, node: Node, expected_schema: str, expected_condition: str, expected_join_type: str) -> None:
-        assert node.type == NodeType.Join, f'Expected Join node but "{node.type}" found'
+    def _expect_join(self, node: TransformationNode, expected_schema: str, expected_condition: str, expected_join_type: str) -> None:
+        assert node.type == TransformationType.Join, f'Expected Join node but "{node.type}" found'
 
         assert node.metadata['condition'] == expected_condition
         assert node.metadata['join_type'] == expected_join_type
@@ -329,8 +330,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 2
 
 
-    def _expect_window(self, node: Node, expected_schema: str) -> None:
-        assert node.type == NodeType.Window, f'Expected Window node but "{node.type}" found'
+    def _expect_window(self, node: TransformationNode, expected_schema: str) -> None:
+        assert node.type == TransformationType.Window, f'Expected Window node but "{node.type}" found'
         
         # TODO: assert metadata
         assert node.metadata['schema_string'] == expected_schema
@@ -338,8 +339,8 @@ class PlanParserTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_sort(self, node: Node, expected_schema: str, expected_order: List[str]) -> None:
-        assert node.type == NodeType.Sort, f'Expected Sort node but "{node.type}" found'
+    def _expect_sort(self, node: TransformationNode, expected_schema: str, expected_order: List[str]) -> None:
+        assert node.type == TransformationType.Sort, f'Expected Sort node but "{node.type}" found'
         
         assert node.metadata['order'] == expected_order
         assert node.metadata['schema_string'] == expected_schema
