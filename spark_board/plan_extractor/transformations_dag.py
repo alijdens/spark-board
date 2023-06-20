@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Generator, Optional
 
 
 class TransformationType(enum.Enum):
+    Alias = "alias"
     Project = "project"
     Filter = "filter"
     Join = "join"
@@ -14,6 +15,15 @@ class TransformationType(enum.Enum):
     Sort = "sort"
     Union = "union"
     Limit = "limit"
+    Repartition = "repartition"
+    RepartitionByExpression = "repartition_by_expression"
+    Deduplicate = "deduplicate"
+    Except = "except"
+    ExceptAll = "except_all"
+    Intersect = "intersect"
+    IntersectAll = "intersect_all"
+    Sample = "sample"
+    Expand = "expand"
 
 
 Metadata = Dict[str, Any]
