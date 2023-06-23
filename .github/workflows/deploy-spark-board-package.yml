@@ -1,0 +1,71 @@
+# IMPORTANT: to trigger a deploy you have to create a new release in github.
+#            before creating the release, make sure to update the version in setup.py
+
+name: Deploy spark-board package
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  # this job will compile the UI and upload it as an artifact
+  # we need node js to do it, so we create a separate job for it
+  compile-ui:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.2.0
+      - name: Build UI
+        run: |
+          cd spark-board-ui
+          npm install
+          npm run build
+          mv dist ../dist-spark-board-ui
+
+      # this stage will upload the compiled UI so the deploy stage can add it to the package
+      - name: Upload spark-board-ui
+        uses: actions/upload-artifact@master
+        with:
+          name: spark-board-ui
+          path: ./dist-spark-board-ui
+
+  # build the Python package and upload it to pypi
+  Deploy:
+    runs-on: ubuntu-22.04
+    needs: compile-ui
+    strategy:
+      max-parallel: 5
+
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.7'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade twine
+          python3 -m pip install --upgrade build
+
+      # now collect the compiled UI from the previous job and insert it into the package
+      - name: Download spark-board-ui
+        uses: actions/download-artifact@master
+        with:
+          name: spark-board-ui
+          path: ./spark_board/ui  # copy to the package's ui folder
+
+      - name: Build dist
+        run: python3 -m build
+
+      - name: Upload to pypi
+        uses: pypa/gh-action-pypi-publish@release/v1

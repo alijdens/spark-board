@@ -24,6 +24,8 @@ setup(
         exclude=[],  # exclude packages matching these glob patterns (empty by default)
     ),
     package_data={
+        # this directory is created during the deployment process and contains the compiled
+        # spark-board-ui react application
         "spark_board": ["ui/*"],
     },
 )
