@@ -1,14 +1,21 @@
 from setuptools import setup, find_packages
 
+# use repository README as long description
+from pathlib import Path
+this_directory = Path(__file__).parent
+README = (this_directory / "README.md").read_text()
+
+
 setup(
     name="spark-board",
-    version="0.0.1",
+    version="0.0.5",
     authors=[
         {"name": "Axel Lijdens", "email": "alijdens@fi.uba.ar"},
         {"name": "Ezequiel Werner", "email": "ewerner@fi.uba.ar"},
     ],
     description="Interactive visualization of Spark jobs",
-    readme="README.md",
+    long_description_content_type="text/markdown",
+    long_description=README,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -18,14 +25,11 @@ setup(
     install_requires=[
         "pyspark>3",
     ],
-    packages=find_packages(
-        where=["spark_board"],  # list of folders that contain the packages (["."] by default)
-        include=["*"],  # package names should match these glob patterns (["*"] by default)
-        exclude=[],  # exclude packages matching these glob patterns (empty by default)
-    ),
+    packages=[package for package in find_packages() if package.startswith("spark_board")],
+    # this is required to include the static web files that show the spark-board UI in the
+    # final package. This directory is created during the deployment process and contains
+    # the compiled spark-board-ui react application
     package_data={
-        # this directory is created during the deployment process and contains the compiled
-        # spark-board-ui react application
-        "spark_board": ["ui/*"],
+        "spark_board": ["ui/**/*"],
     },
 )
