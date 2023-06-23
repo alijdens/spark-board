@@ -67,5 +67,7 @@ jobs:
       - name: Build dist
         run: python3 -m build
 
+      # this step does not use any credentials because this repo is added as a trusted publisher
+      # see https://docs.pypi.org/trusted-publishers/using-a-publisher/ for more information
       - name: Upload to pypi
         uses: pypa/gh-action-pypi-publish@release/v1

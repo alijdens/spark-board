@@ -1,50 +1,37 @@
-# spark-board
+# `spark-board`: interactive PySpark dataframes visualization
 
-## Developing in Docker
+`spark-board` provides an interactive way to analize PySpark data frame execution plans as a static website displaying the transformations DAG.
 
-### Build Docker image
+Check out the [examples](https://alijdens.github.io/spark-board/) for a quick overview of the features (and the corresponding examples source code [here](./tests/examples/)).
 
-```shell
-make docker-image
-```
+## Usage
 
-### Run Docker image
+`spark-board` takes a PySpark data frame and inspects the operations to build the DAG. This usually is the final step of a PySpark script, right before writing it to disk.
 
-To run the docker image as a development environment (i.e. interactive session with your local code mounted in the image) just run:
+### Install `spark-board`
 
 ```shell
-make docker
+pip install spark-board
 ```
 
-## Developing locally
+### Run `spark-board`
 
-Make sure you have the required Java RE for the Spark version you want to run properly setup for Spark use.
+```python
+import spark_board
 
-Install `pipenv` and run:
+# get the PySpark data frame that will be displayed
+df = ...
 
-```shell
-pipenv sync --dev
-pipenv shell
+spark_board.html.dump_dataframe(
+    df=df,
+    output_dir="./spark_board_output",
+    overwrite=True,  # overwrite output_dir if it already exists
+    default_settings=DefaultSettings(),  # override default settings if desired
+)
 ```
 
-## How to use it
+and that's it! `spark-board` will generate a static website in the defined `output_dir` folder. You can now serve the website using any web server and inspect the operations.
 
-### Dependencies
-pipenv
+### Serving
 
-### Run tests
-```shell
-make tests
-```
-
-### Run examples
-The examples are a set of scripts located in [examples](./tests/examples/) folder that create different data frames. With the [`run.py`](./run.py) script you can run the examples and generate an output HTML from them.
-
-In order to run the examples you can execute the following command:
-```shell
-python ./run.py [example_name] --output out.html
-```
-
-## Working with the UI
-
-The visual part of the package is developed in React (see [spark-board-ui](./spark-board-ui/)). If want to update the visualization, follow the steps in the [README](./spark-board-ui/README.md) and then create a new commit replacing the [compiled `ui`](./spark_board/ui/) files by the new ones.
+`spark-board` is intended to be a live documentation of PySpark scripts. Because of this, it's advisable to run it every time the source code is updated. For example, `spark-board` can be run as part of a CI pipeline and the generated website uploaded to a static website hosting service, like Github or Gitlab pages (we actually do this to [update and serve the examples](./.github/workflows/deploy-examples.yml) in this repository).
