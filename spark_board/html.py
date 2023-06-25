@@ -96,12 +96,9 @@ def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
         TransformationType.Union: 'Union',
         TransformationType.Limit: 'Limit',
         TransformationType.Repartition: 'Repartition',
-        TransformationType.RepartitionByExpression: 'RepartitionByExpression',
         TransformationType.Deduplicate: 'Deduplicate',
         TransformationType.Except: 'Except',
-        TransformationType.ExceptAll: 'ExceptAll',
         TransformationType.Intersect: 'Intersect',
-        TransformationType.IntersectAll: 'IntersectAll',
         TransformationType.Sample: 'Sample',
         TransformationType.Expand: 'Expand',
     }

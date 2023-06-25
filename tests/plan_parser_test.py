@@ -272,6 +272,486 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
+    """
+    From here, all tests are only considering one transformation
+    """
+
+    def test_zz_aggregate(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.agg(F.min(df.a))
+        
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- min(a): double (nullable = true)\n")
+        self._expect_aggregate(node=dag, expected_schema=schema, expected_aggregate_expressions=['min(a) AS `min(a)`'], expected_grouping_expressions=[])
+
+
+    def test_zz_alias(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.alias("df_as_1")
+
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_alias(node=dag, expected_schema=schema, expected_alias="df_as_1")
+
+    def test_zz_coalesce(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.coalesce(2)
+
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_repartition(node=dag, expected_schema=schema, expected_num_partitions=2, expected_expressions=[])
+
+    def test_zz_cross_join(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double>")
+        df2 = spark.createDataFrame([], schema="struct<b:double, c:double>")
+        df = df1.crossJoin(df2.select("b"))
+
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='None',
+                          expected_join_type='Cross')
+
+    def test_zz_describe(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.describe(["name"])
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- summary: string (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["summary", "name"])
+
+    def test_zz_distinct(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.distinct()
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_deduplicate(node=dag, expected_schema=schema, expected_deduplicate_columns=['a', 'b', 'name'])
+
+    def test_zz_drop(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.drop("a")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["b", "name"])
+
+    def test_zz_drop_duplicates(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.dropDuplicates(["name"])
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_deduplicate(node=dag, expected_schema=schema, expected_deduplicate_columns=["name"])
+
+    def test_zz_dropna(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.dropna()
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_filter(node=dag, expected_schema=schema, expected_condition="atleastnnonnulls(a, b, name)")
+
+    def test_zz_except_all(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.exceptAll(df2)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_except(node=dag, expected_schema=schema, expected_preserves_duplicates=True)
+
+    def test_zz_fillna(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.fillna(5, ["a", "b"])
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = false)\n"
+                  " |-- b: double (nullable = false)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
+
+    def test_zz_filter(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.filter(df.a > 10)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_filter(node=dag, expected_schema=schema, expected_condition="(a > CAST(10 AS DOUBLE))")
+
+    def test_zz_intersect(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.intersect(df2)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_intersect(node=dag, expected_schema=schema)
+
+    def test_zz_limit(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.limit(5)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_limit(node=dag, expected_schema=schema, expected_limit_expr="5")
+
+    def test_zz_order_by(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.orderBy("name")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sort(node=dag, expected_schema=schema, expected_order=["name ASC NULLS FIRST"])
+
+    def test_zz_random_split(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.randomSplit([.5, .5])[0]
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sample(node=dag, expected_schema=schema, expected_fraction=0.5)
+
+    def test_zz_repartition(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.repartition(10, "name")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_repartition(node=dag, expected_schema=schema, expected_num_partitions=10, expected_expressions=["name"])
+
+    def test_zz_replace(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.replace("a", "new")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
+
+    def test_zz_rollup(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.rollup("a", "name").agg(F.min(df.a))
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n"
+                  " |-- min(a): double (nullable = true)\n")
+        self._expect_aggregate(node=dag,
+                               expected_schema=schema,
+                               expected_aggregate_expressions=['a', 'name', 'min(a) AS `min(a)`'],
+                               expected_grouping_expressions=['a', 'name', 'spark_grouping_id'])
+
+        dag = dag.children[0]
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n"
+                  " |-- spark_grouping_id: long (nullable = false)\n")
+        self._expect_expand(node=dag,
+                            expected_schema=schema,
+                            expected_projections=[
+                                ['a', 'b', 'name', 'a', 'name', '0L'],
+                                ['a', 'b', 'name', 'a', 'CAST(NULL AS STRING)', '1L'],
+                                ['a', 'b', 'name', 'CAST(NULL AS DOUBLE)', 'CAST(NULL AS STRING)', '3L']
+                            ])
+
+    def test_zz_sample(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.sample(withReplacement=True, fraction=0.5, seed=3)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sample(node=dag, expected_schema=schema, expected_fraction=0.5)
+
+    def test_zz_sample_by(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.sampleBy("name", fractions={0: 0.1, 1: 0.2}, seed=3)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_filter(node=dag, expected_schema=schema, expected_condition="UDF(name, rand(3))")
+
+    def test_zz_select_expr(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.selectExpr("*")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
+
+    def test_zz_sort_within_partitions(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.sortWithinPartitions("name", ascending=False)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sort(node=dag, expected_schema=schema, expected_order=['name DESC NULLS LAST'])
+
+    def test_zz_subtract(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.subtract(df2)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_except(node=dag, expected_schema=schema, expected_preserves_duplicates=False)
+
+    def test_zz_to_df(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.toDF("first_num", "second_num", "name")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- first_num: double (nullable = true)\n"
+                  " |-- second_num: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=['first_num', 'second_num', 'name'])
+
+    def test_zz_union(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.union(df2)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
+
+    def test_zz_union_union(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df3 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.union(df2).union(df3)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=3)
+
+    def test_zz_union_all(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df1.unionAll(df2)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
+
+    def test_zz_union_by_name(self) -> None:
+        df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df2 = spark.createDataFrame([], schema="struct<a:double, c:double, name:string>")
+        df = df1.unionByName(df2, allowMissingColumns=True)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
+
+    def test_zz_where(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.where(df.a > 10)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_filter(node=dag, expected_schema=schema, expected_condition="(a > CAST(10 AS DOUBLE))")
+
+    def test_zz_with_column_renamed(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.withColumnRenamed("name", "new_name")
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- new_name: string (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'new_name'])
+
+    def test_zz_with_column(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.withColumn("aplusb", df.a + df.b)
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n"
+                  " |-- aplusb: double (nullable = true)\n")
+
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'name', 'aplusb'])
+
+
+
+
+
+    """
+    Expectations:
+    """
+
+    def _expect_union(self, node: TransformationNode, expected_schema: str, expected_number_of_children: int) -> None:
+        assert node.type == TransformationType.Union, f'Expected Union node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+
+        assert len(node.children) == expected_number_of_children
+
+
+    def _expect_expand(self, node: TransformationNode, expected_schema: str, expected_projections: List[List[str]]) -> None:
+        assert node.type == TransformationType.Expand, f'Expected Expand node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['projections'] == expected_projections
+
+        assert len(node.children) == 1
+
+
+    def _expect_sample(self, node: TransformationNode, expected_schema: str, expected_fraction: float) -> None:
+        assert node.type == TransformationType.Sample, f'Expected Sample node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['fraction'] == expected_fraction
+        assert node.metadata['seed'] is not None
+
+        assert len(node.children) == 1
+
+
+    def _expect_limit(self, node: TransformationNode, expected_schema: str, expected_limit_expr: str) -> None:
+        assert node.type == TransformationType.Limit, f'Expected Limit node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['limit_expr'] == expected_limit_expr
+
+        assert len(node.children) == 1
+
+
+    def _expect_intersect(self, node: TransformationNode, expected_schema: str) -> None:
+        assert node.type == TransformationType.Intersect, f'Expected Intersect node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+
+        assert len(node.children) == 2
+
+
+    def _expect_except(self, node: TransformationNode, expected_schema: str, expected_preserves_duplicates: bool) -> None:
+        assert node.type == TransformationType.Except, f'Expected Except node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['preserves_duplicates'] == expected_preserves_duplicates
+
+        assert len(node.children) == 2
+
+
+    def _expect_deduplicate(self, node: TransformationNode, expected_schema: str, expected_deduplicate_columns: List[str]) -> None:
+        assert node.type == TransformationType.Deduplicate, f'Expected Deduplicate node but "{node.type}" found'
+
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['deduplicate_columns'] == expected_deduplicate_columns
+
+        assert len(node.children) == 1
+
+
+    def _expect_alias(self, node: TransformationNode, expected_schema: str, expected_alias: str) -> None:
+        assert node.type == TransformationType.Alias, f'Expected Alias node but "{node.type}" found'
+        
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['alias'] == expected_alias
+
+        assert len(node.children) == 1
+
+
+    def _expect_repartition(self, node: TransformationNode, expected_schema: str, expected_num_partitions: int, expected_expressions: List[str]) -> None:
+        assert node.type == TransformationType.Repartition, f'Expected Repartition node but "{node.type}" found'
+        
+        assert node.metadata["num_partitions"] == expected_num_partitions
+        assert node.metadata["expressions"] == expected_expressions
+        assert node.metadata['schema_string'] == expected_schema
+
+        assert len(node.children) == 1
+
+
     def _expect_project(self, node: TransformationNode, expected_schema: str, expected_column_names: List[str]) -> None:
         assert node.type == TransformationType.Project, f'Expected Project node but "{node.type}" found'
 
