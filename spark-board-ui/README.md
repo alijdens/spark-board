@@ -27,13 +27,19 @@ npm run dev
 
 to start the React web server (you can do this inside the docker container after executing `make docker`).
 
-## Release
+## Test with `spark-board`
 
-Replace the generated files [in the `spark-board` package](../spark_board/ui/) by the ones generated in `dist`. This process can also be executed automatically with make, which will "compile" react-flow and replace the output in `spark_board`:
+If you want to test the new UI with `spark-board`, you can do so by inserting the UI files in the package.
+
+Compile the React app and copy the generated files in `dist` [to the `spark-board` package](../spark_board/ui/). This process can also be executed automatically with make, which will "compile" react-flow and replace the output in `spark_board`:
 
 ```sh
 make deploy
 ```
+
+Note that these files are git-ignored because during a real deployment, a github action will do this same process before building the package and uploading it to pypi.
+
+You can now use `spark_board` to draw data frames.
 
 ## Development
 

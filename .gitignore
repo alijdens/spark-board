@@ -1,3 +1,6 @@
+# compiled spark-board-ui: ignored because it's automatically generated during releases
+spark_board/ui/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

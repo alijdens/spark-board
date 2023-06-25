@@ -65,6 +65,6 @@ jobs:
       with:
         path: ./examples
 
-    - name: Deploy to pages
+    - name: Deploy examples to pages
       id: deployment
       uses: actions/deploy-pages@main
