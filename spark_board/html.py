@@ -3,7 +3,7 @@ import shutil
 import json
 import dataclasses
 
-from .default_settings import DefaultSettings
+from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
 from .plan_extractor.transformations_dag import TransformationColumn, TransformationNode, TransformationType
