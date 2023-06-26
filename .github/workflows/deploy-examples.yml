@@ -10,10 +10,16 @@ permissions:
   contents: read
   pages: write
   id-token: write
-      
+
 jobs:
+  compile-ui:
+    uses: ./.github/workflows/compile-ui.yml
+    with:
+      artifact-name: spark-board-ui
+
   Build:
     runs-on: ubuntu-22.04
+    needs: compile-ui
     strategy:
       max-parallel: 5
 
@@ -32,12 +38,19 @@ jobs:
         pip install pipenv==2023.4.29
         pipenv sync
 
+    # now collect the compiled UI from the previous job and insert it into the package
+    - name: Download compiled UI
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ needs.compile-ui.outputs.artifact-name }}
+        path: spark_board/ui  # copy to the package's ui folder
+
     - name: Build examples
       run: |
         pipenv run python ./scripts/build_examples.py --output ./examples
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: page
         path: ./examples
@@ -52,7 +65,7 @@ jobs:
 
     steps:
     - name: Collect artifacts
-      uses: actions/download-artifact@master
+      uses: actions/download-artifact@v3
       with:
         name: page
         path: ./examples
@@ -67,4 +80,4 @@ jobs:
 
     - name: Deploy examples to pages
       id: deployment
-      uses: actions/deploy-pages@main
+      uses: actions/deploy-pages@v2

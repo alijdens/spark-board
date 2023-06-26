@@ -9,30 +9,10 @@ on:
       - created
 
 jobs:
-  # this job will compile the UI and upload it as an artifact
-  # we need node js to do it, so we create a separate job for it
   compile-ui:
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20.2.0
-      - name: Build UI
-        run: |
-          cd spark-board-ui
-          npm install
-          npm run build
-          mv dist ../dist-spark-board-ui
-
-      # this stage will upload the compiled UI so the deploy stage can add it to the package
-      - name: Upload spark-board-ui
-        uses: actions/upload-artifact@master
-        with:
-          name: spark-board-ui
-          path: ./dist-spark-board-ui
+    uses: ./.github/workflows/compile-ui.yml
+    with:
+      artifact-name: spark-board-ui
 
   # build the Python package and upload it to pypi
   Deploy:
@@ -58,11 +38,11 @@ jobs:
           python3 -m pip install --upgrade build
 
       # now collect the compiled UI from the previous job and insert it into the package
-      - name: Download spark-board-ui
-        uses: actions/download-artifact@master
+      - name: Download compiled UI
+        uses: actions/download-artifact@v3
         with:
-          name: spark-board-ui
-          path: ./spark_board/ui  # copy to the package's ui folder
+          name: ${{ needs.compile-ui.outputs.artifact-name }}
+          path: spark_board/ui  # copy to the package's ui folder
 
       - name: Build dist
         run: python3 -m build
