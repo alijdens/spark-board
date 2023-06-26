@@ -17,12 +17,12 @@ pip install spark-board
 ### Run `spark-board`
 
 ```python
-import spark_board
+from spark_board.html import dump_dataframe, DefaultSettings
 
 # get the PySpark data frame that will be displayed
 df = ...
 
-spark_board.html.dump_dataframe(
+dump_dataframe(
     df=df,
     output_dir="./spark_board_output",
     overwrite=True,  # overwrite output_dir if it already exists
