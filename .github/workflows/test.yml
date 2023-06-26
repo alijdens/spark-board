@@ -6,6 +6,11 @@ on:
       - main
 
 jobs:
+  compile-ui:
+    uses: ./.github/workflows/compile-ui.yml
+    with:
+      artifact-name: spark-board-ui
+
   Test:
     runs-on: ubuntu-22.04
     strategy:
@@ -24,6 +29,12 @@ jobs:
 
         pip install pipenv==2023.4.29
         pipenv sync
+    # now collect the compiled UI from the previous job and insert it into the package
+    - name: Download compiled UI
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ needs.compile-ui.outputs.artifact-name }}
+        path: spark_board/ui  # copy to the package's ui folder
     - name: mypy
       run: |
         pipenv run make mypy
