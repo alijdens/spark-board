@@ -4,7 +4,7 @@ from spark_board.html import dump_dataframe, DefaultSettings
 from pathlib import Path
 
 
-def test_spark_board(spark: SparkSession):
+def test_spark_board(spark: SparkSession) -> None:
     """This test intends to be a very simple smoke test for the normal spark-board
     usage."""
 
@@ -17,9 +17,9 @@ def test_spark_board(spark: SparkSession):
     # dump it expecting no errors
     dump_dataframe(
         df=df,
-        output_dir=OUT_DIR,
+        output_dir=str(OUT_DIR),
         overwrite=True,  # overwrite output_dir if it already exists
         default_settings=DefaultSettings(),  # override default settings if desired
     )
 
-    assert (OUT_DIR/"model.js").exists
+    assert (OUT_DIR/"model.js").exists()

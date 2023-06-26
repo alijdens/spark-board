@@ -1,11 +1,12 @@
 import os
 import pytest
 import tempfile
+from typing import Generator
 from pyspark.sql.session import SparkSession
 
 
 @pytest.fixture
-def spark() -> SparkSession:
+def spark() -> Generator[SparkSession, None, None]:
     temp_dir = tempfile.TemporaryDirectory().name
     spark_warehouse_dir = os.path.join(temp_dir, "spark-warehouse")
     metastore_db_dir = os.path.join(temp_dir, "metastore_db")
