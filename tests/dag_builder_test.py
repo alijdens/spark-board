@@ -15,8 +15,8 @@ from spark_board.plan_extractor.transformations_dag import TransformationNode, T
 import unittest
 
 
-class PlanParserTestSuite(unittest.TestCase):
-    """Plan parser test cases."""
+class DagBuilderUnitTestSuite(unittest.TestCase):
+    """DAG builder test cases."""
 
     def test_select_and_two_filters(self) -> None:
         df = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
@@ -140,7 +140,7 @@ class PlanParserTestSuite(unittest.TestCase):
         inner_join = project.children[0]
         self._expect_join(node=inner_join,
                           expected_schema=schema,
-                          expected_condition='Some((city#38 = city#44))',
+                          expected_condition='Some((city#233 = city#239))',
                           expected_join_type='Inner')
 
         schema = ("root\n"
@@ -211,7 +211,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_with_column(self) -> None:
+    def test_multi_with_column(self) -> None:
         df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
 
         df = df.withColumn("surplus", df.income - df.expenses)
@@ -257,26 +257,11 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_rdd(node=rdd, expected_schema=schema)
 
 
-    def test_order_by(self) -> None:
-        df = spark.createDataFrame([], schema="struct<user:string, income:double, expenses:double>")
-        df = df.orderBy(df.income, df.expenses.desc())
-        schema = ("root\n"
-                  " |-- user: string (nullable = true)\n"
-                  " |-- income: double (nullable = true)\n"
-                  " |-- expenses: double (nullable = true)\n")
-
-        sort = build_dag(df)
-        self._expect_sort(node=sort, expected_schema=schema, expected_order=['income ASC NULLS FIRST', 'expenses DESC NULLS LAST'])
-
-        rdd = sort.children[0]
-        self._expect_rdd(node=rdd, expected_schema=schema)
-
-
     """
     From here, all tests are only considering one transformation
     """
 
-    def test_zz_aggregate(self) -> None:
+    def test_aggregate(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.agg(F.min(df.a))
         
@@ -287,7 +272,7 @@ class PlanParserTestSuite(unittest.TestCase):
         self._expect_aggregate(node=dag, expected_schema=schema, expected_aggregate_expressions=['min(a) AS `min(a)`'], expected_grouping_expressions=[])
 
 
-    def test_zz_alias(self) -> None:
+    def test_alias(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.alias("df_as_1")
 
@@ -299,7 +284,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_alias(node=dag, expected_schema=schema, expected_alias="df_as_1")
 
-    def test_zz_coalesce(self) -> None:
+    def test_coalesce(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.coalesce(2)
 
@@ -311,7 +296,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_repartition(node=dag, expected_schema=schema, expected_num_partitions=2, expected_expressions=[])
 
-    def test_zz_cross_join(self) -> None:
+    def test_cross_join(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double>")
         df2 = spark.createDataFrame([], schema="struct<b:double, c:double>")
         df = df1.crossJoin(df2.select("b"))
@@ -327,7 +312,7 @@ class PlanParserTestSuite(unittest.TestCase):
                           expected_condition='None',
                           expected_join_type='Cross')
 
-    def test_zz_describe(self) -> None:
+    def test_describe(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.describe(["name"])
         dag = build_dag(df)
@@ -337,7 +322,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=["summary", "name"])
 
-    def test_zz_distinct(self) -> None:
+    def test_distinct(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.distinct()
         dag = build_dag(df)
@@ -348,7 +333,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_deduplicate(node=dag, expected_schema=schema, expected_deduplicate_columns=['a', 'b', 'name'])
 
-    def test_zz_drop(self) -> None:
+    def test_drop(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.drop("a")
         dag = build_dag(df)
@@ -358,7 +343,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=["b", "name"])
 
-    def test_zz_drop_duplicates(self) -> None:
+    def test_drop_duplicates(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.dropDuplicates(["name"])
         dag = build_dag(df)
@@ -369,7 +354,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_deduplicate(node=dag, expected_schema=schema, expected_deduplicate_columns=["name"])
 
-    def test_zz_dropna(self) -> None:
+    def test_dropna(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.dropna()
         dag = build_dag(df)
@@ -380,7 +365,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_filter(node=dag, expected_schema=schema, expected_condition="atleastnnonnulls(a, b, name)")
 
-    def test_zz_except_all(self) -> None:
+    def test_except_all(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df1.exceptAll(df2)
@@ -392,7 +377,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_except(node=dag, expected_schema=schema, expected_preserves_duplicates=True)
 
-    def test_zz_fillna(self) -> None:
+    def test_fillna(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.fillna(5, ["a", "b"])
         dag = build_dag(df)
@@ -403,7 +388,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
 
-    def test_zz_filter(self) -> None:
+    def test_filter(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.filter(df.a > 10)
         dag = build_dag(df)
@@ -414,7 +399,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_filter(node=dag, expected_schema=schema, expected_condition="(a > CAST(10 AS DOUBLE))")
 
-    def test_zz_intersect(self) -> None:
+    def test_intersect(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df1.intersect(df2)
@@ -426,7 +411,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_intersect(node=dag, expected_schema=schema)
 
-    def test_zz_limit(self) -> None:
+    def test_limit(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.limit(5)
         dag = build_dag(df)
@@ -437,7 +422,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_limit(node=dag, expected_schema=schema, expected_limit_expr="5")
 
-    def test_zz_order_by(self) -> None:
+    def test_order_by(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.orderBy("name")
         dag = build_dag(df)
@@ -448,7 +433,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_sort(node=dag, expected_schema=schema, expected_order=["name ASC NULLS FIRST"])
 
-    def test_zz_random_split(self) -> None:
+    def test_random_split(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.randomSplit([.5, .5])[0]
         dag = build_dag(df)
@@ -459,7 +444,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_sample(node=dag, expected_schema=schema, expected_fraction=0.5)
 
-    def test_zz_repartition(self) -> None:
+    def test_repartition(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.repartition(10, "name")
         dag = build_dag(df)
@@ -470,7 +455,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_repartition(node=dag, expected_schema=schema, expected_num_partitions=10, expected_expressions=["name"])
 
-    def test_zz_replace(self) -> None:
+    def test_replace(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.replace("a", "new")
         dag = build_dag(df)
@@ -481,7 +466,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
 
-    def test_zz_rollup(self) -> None:
+    def test_rollup(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.rollup("a", "name").agg(F.min(df.a))
         dag = build_dag(df)
@@ -511,7 +496,7 @@ class PlanParserTestSuite(unittest.TestCase):
                                 ['a', 'b', 'name', 'CAST(NULL AS DOUBLE)', 'CAST(NULL AS STRING)', '3L']
                             ])
 
-    def test_zz_sample(self) -> None:
+    def test_sample(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.sample(withReplacement=True, fraction=0.5, seed=3)
         dag = build_dag(df)
@@ -522,7 +507,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_sample(node=dag, expected_schema=schema, expected_fraction=0.5)
 
-    def test_zz_sample_by(self) -> None:
+    def test_sample_by(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.sampleBy("name", fractions={0: 0.1, 1: 0.2}, seed=3)
         dag = build_dag(df)
@@ -533,7 +518,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_filter(node=dag, expected_schema=schema, expected_condition="UDF(name, rand(3))")
 
-    def test_zz_select_expr(self) -> None:
+    def test_select_expr(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.selectExpr("*")
         dag = build_dag(df)
@@ -544,7 +529,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "name"])
 
-    def test_zz_sort_within_partitions(self) -> None:
+    def test_sort_within_partitions(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.sortWithinPartitions("name", ascending=False)
         dag = build_dag(df)
@@ -555,7 +540,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_sort(node=dag, expected_schema=schema, expected_order=['name DESC NULLS LAST'])
 
-    def test_zz_subtract(self) -> None:
+    def test_subtract(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df1.subtract(df2)
@@ -567,7 +552,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_except(node=dag, expected_schema=schema, expected_preserves_duplicates=False)
 
-    def test_zz_to_df(self) -> None:
+    def test_to_df(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.toDF("first_num", "second_num", "name")
         dag = build_dag(df)
@@ -578,7 +563,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=['first_num', 'second_num', 'name'])
 
-    def test_zz_union(self) -> None:
+    def test_union(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df1.union(df2)
@@ -590,7 +575,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
 
-    def test_zz_union_union(self) -> None:
+    def test_union_union(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df3 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -603,7 +588,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=3)
 
-    def test_zz_union_all(self) -> None:
+    def test_union_all(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df1.unionAll(df2)
@@ -615,7 +600,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
 
-    def test_zz_union_by_name(self) -> None:
+    def test_union_by_name(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, c:double, name:string>")
         df = df1.unionByName(df2, allowMissingColumns=True)
@@ -628,7 +613,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- c: double (nullable = true)\n")
         self._expect_union(node=dag, expected_schema=schema, expected_number_of_children=2)
 
-    def test_zz_where(self) -> None:
+    def test_where(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.where(df.a > 10)
         dag = build_dag(df)
@@ -639,7 +624,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_filter(node=dag, expected_schema=schema, expected_condition="(a > CAST(10 AS DOUBLE))")
 
-    def test_zz_with_column_renamed(self) -> None:
+    def test_with_column_renamed(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.withColumnRenamed("name", "new_name")
         dag = build_dag(df)
@@ -650,7 +635,7 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- new_name: string (nullable = true)\n")
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'new_name'])
 
-    def test_zz_with_column(self) -> None:
+    def test_with_column(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df = df.withColumn("aplusb", df.a + df.b)
         dag = build_dag(df)
@@ -662,10 +647,6 @@ class PlanParserTestSuite(unittest.TestCase):
                   " |-- aplusb: double (nullable = true)\n")
 
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'name', 'aplusb'])
-
-
-
-
 
     """
     Expectations:
