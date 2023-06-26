@@ -3,6 +3,7 @@ import shutil
 import json
 import dataclasses
 
+from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
 from .plan_extractor.transformations_dag import TransformationColumn, TransformationNode, TransformationType
@@ -24,14 +25,6 @@ const model_initialEdges = {links};
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
         return json.JSONEncoder.default(self, o)    
-
-
-@dataclasses.dataclass
-class DefaultSettings:
-    """Default settings for the HTML DAG renderer."""
-
-    animationEnabled: bool = True
-    animationEnabledOnDrag: bool = True
 
 
 def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings) -> None:

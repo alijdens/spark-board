@@ -17,12 +17,12 @@ pip install spark-board
 ### Run `spark-board`
 
 ```python
-import spark_board
+from spark_board.html import dump_dataframe, DefaultSettings
 
 # get the PySpark data frame that will be displayed
 df = ...
 
-spark_board.html.dump_dataframe(
+dump_dataframe(
     df=df,
     output_dir="./spark_board_output",
     overwrite=True,  # overwrite output_dir if it already exists
@@ -31,6 +31,8 @@ spark_board.html.dump_dataframe(
 ```
 
 and that's it! `spark-board` will generate a static website in the defined `output_dir` folder. You can now serve the website using any web server and inspect the operations.
+
+You can check out the avaialble default settings [here](https://github.com/alijdens/spark-board/blob/main/spark_board/default_settings.py).
 
 ### Serving
 
