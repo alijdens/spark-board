@@ -8,7 +8,7 @@ README = (this_directory / "README.md").read_text()
 
 setup(
     name="spark-board",
-    version="0.0.5",
+    version="0.0.6",
     authors=[
         {"name": "Axel Lijdens", "email": "alijdens@fi.uba.ar"},
         {"name": "Ezequiel Werner", "email": "ewerner@fi.uba.ar"},
