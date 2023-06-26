@@ -8,7 +8,8 @@ from .py4j_utils import iterate_java_object
 class TransformationNodeBuilder(object):
 
     def build(self, java_node: JavaObject) -> TransformationNode:
-        assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
+        if self._expected_number_of_nodes() is not None:
+            assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
 
         metadata: Dict[str, str] = {}
         self._extract_common_metadata(java_node, metadata)
@@ -74,7 +75,7 @@ class TransformationNodeBuilder(object):
     def _get_type(self) -> TransformationType:
         raise NotImplementedError("Abstract method")
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         raise NotImplementedError("Abstract method")
 
 
@@ -89,7 +90,7 @@ class ProjectNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Project
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
@@ -100,7 +101,7 @@ class FilterNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Filter
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
@@ -112,7 +113,7 @@ class LogicalRDDNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.LogicalRDD
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 0
 
 
@@ -124,7 +125,7 @@ class JoinNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Join
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 2
 
 
@@ -135,7 +136,7 @@ class GenerateNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Generate
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
@@ -155,7 +156,7 @@ class AggregateNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Aggregate
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
@@ -167,7 +168,7 @@ class WindowNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Window
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
@@ -178,37 +179,143 @@ class SortNodeBuilder(TransformationNodeBuilder):
     def _get_type(self) -> TransformationType:
         return TransformationType.Sort
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
 class UnionNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
-        # TODO: parse metadata
+        # Nothing to extract here
         pass
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Union
 
-    def _expected_number_of_nodes(self) -> int:
-        return 2
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        # Might be any number greater than 1
+        return None
 
 
-class GlobalLimitNodeBuilder(TransformationNodeBuilder):
+class LimitNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
-        # metadata["limit"] = TODO: parse limit
-        pass
+        metadata["limit_expr"] = node.limitExpr().toString()
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Limit
 
-    def _expected_number_of_nodes(self) -> int:
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 1
+
+
+class AliasNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["alias"] = node.identifier().toString()
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Alias
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 1
+
+
+class RepartitionNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["num_partitions"] = node.numPartitions()
+        metadata["expressions"] = [exp.sql() for exp in iterate_java_object(node.expressions())]
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Repartition
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 1
+
+
+class DeduplicateNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["deduplicate_columns"] = [col.sql() for col in iterate_java_object(node.references())]
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Deduplicate
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 1
+
+
+class ExceptAllNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["preserves_duplicates"] = True
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Except
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 2
+
+
+class ExceptNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["preserves_duplicates"] = False
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Except
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 2
+
+
+class IntersectNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["preserves_duplicates"] = False
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Intersect
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 2
+
+
+class IntersectAllNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["preserves_duplicates"] = True
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Intersect
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 2
+
+
+class SampleNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["seed"] = node.seed()
+        metadata["fraction"] = node.fraction()
+
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Sample
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 1
+
+
+class ExpandNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["projections"] = [self._proj(proj) for proj in iterate_java_object(node.projections())]
+
+    def _proj(self, proj: List[JavaObject]) -> List[str]:
+        return [col.sql() for col in iterate_java_object(proj)]
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Expand
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
 
 
 def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
     # objects that can parse each transformation sub-tree
     transformation_builders: Dict[str, 'TransformationNodeBuilder'] = {
+        "SubqueryAlias": AliasNodeBuilder(),
         "Project": ProjectNodeBuilder(),
         "Filter": FilterNodeBuilder(),
         "LogicalRDD": LogicalRDDNodeBuilder(),
@@ -218,9 +325,18 @@ def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
         "Window": WindowNodeBuilder(),
         "Sort": SortNodeBuilder(),
         "Union": UnionNodeBuilder(),
-        "GlobalLimit": GlobalLimitNodeBuilder(),
-        "LocalLimit": GlobalLimitNodeBuilder(),  # TODO: is this correct?
+        "GlobalLimit": LimitNodeBuilder(),
+        "LocalLimit": LimitNodeBuilder(),
         # "relation": RelationNodeBuilder(),
+        "Repartition": RepartitionNodeBuilder(),
+        "Deduplicate": DeduplicateNodeBuilder(),
+        "Except": ExceptNodeBuilder(),
+        "Except All": ExceptAllNodeBuilder(),
+        "Intersect": IntersectNodeBuilder(),
+        "Intersect All": IntersectAllNodeBuilder(),
+        "Sample": SampleNodeBuilder(),
+        "RepartitionByExpression": RepartitionNodeBuilder(),
+        "Expand": ExpandNodeBuilder(),
     }
 
     builder = transformation_builders.get(node.nodeName())

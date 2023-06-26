@@ -84,6 +84,7 @@ def _column_as_dict(column: TransformationColumn) -> Dict[str, object]:
 def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
     # map the Node.type to the type required by the HTML DAG renderer
     node_type_map = {
+        TransformationType.Alias: 'Alias',
         TransformationType.Project: 'Project',
         TransformationType.Filter: 'Filter',
         TransformationType.LogicalRDD: 'Table',
@@ -94,6 +95,12 @@ def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
         TransformationType.Window: 'Window',
         TransformationType.Union: 'Union',
         TransformationType.Limit: 'Limit',
+        TransformationType.Repartition: 'Repartition',
+        TransformationType.Deduplicate: 'Deduplicate',
+        TransformationType.Except: 'Except',
+        TransformationType.Intersect: 'Intersect',
+        TransformationType.Sample: 'Sample',
+        TransformationType.Expand: 'Expand',
     }
 
     return {

@@ -72,6 +72,10 @@ export function getTransformationStyle(transformationType) {
 
         case "Limit":
             return ["lightgreen", GlobalLimitIcon];
+
+        default:
+            // TODO: Handle this
+            return ["white", TableIcon]
     }
 
     throw new Error("Unknown transformation type: " + transformationType);
