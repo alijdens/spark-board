@@ -37,6 +37,12 @@ jobs:
           python3 -m pip install --upgrade twine
           python3 -m pip install --upgrade build
 
+      - name: Process README
+        run: |
+          # overwrite the README.md with the rendered version
+          REL_LINKS_BASE=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/
+          python3 ./scripts/readme_renderer.py --file ./README.md --rel-links-base "$REL_LINKS_BASE" --output ./README.md
+
       # now collect the compiled UI from the previous job and insert it into the package
       - name: Download compiled UI
         uses: actions/download-artifact@v3
