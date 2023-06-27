@@ -9,10 +9,8 @@ README = (this_directory / "README.md").read_text()
 setup(
     name="spark-board",
     version="0.0.6",
-    authors=[
-        {"name": "Axel Lijdens", "email": "alijdens@fi.uba.ar"},
-        {"name": "Ezequiel Werner", "email": "ewerner@fi.uba.ar"},
-    ],
+    author="Axel Lijdens, Ezequiel Werner",
+    url="https://github.com/alijdens/spark-board",
     description="Interactive visualization of Spark jobs",
     long_description_content_type="text/markdown",
     long_description=README,
