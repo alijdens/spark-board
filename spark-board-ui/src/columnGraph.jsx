@@ -73,6 +73,8 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
         }
         return edge;
     })), [columnGraph]);
+
+    return columnGraph;
 }
 
 function max(a, b) {
@@ -121,10 +123,10 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
 function applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes) {
     if (node.id in visitedTransformationNodes) {
         let h = max(120, 90 + visitedTransformationNodes[node.id] * 15);
-        node.data.height = h;
+        node.height = h;
         node.style = { ...node.style, height: h };
     } else {
-        node.data.height = 120;
+        node.height = 120;
         node.style = { ...node.style, height: 120 };
     }
     return node;

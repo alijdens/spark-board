@@ -2,7 +2,7 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, useStore } from 'reactflow';
 
 import AddColumnIcon from './assets/addColumn.svg';
 import AliasIcon from './assets/alias.svg';
@@ -23,12 +23,22 @@ import UploadIcon from './assets/upload.svg';
 import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
-function TransformationNode({ data }) {
+function TransformationNode({ id, data }) {
+    // This resizes the NodeWrapper when the div is resized
+    const size = useStore((s) => {
+        const node = s.nodeInternals.get(id);
+        return {
+            height: node.height,
+            width: node.width,
+        };
+    });
+
     const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
         backgroundColor: color,
-        height: data.height,
+        height: size.height,
+        width: size.width,
     }
 
     let classes = ["transformation-node__container"];
@@ -36,14 +46,12 @@ function TransformationNode({ data }) {
         classes.push("transformation-node-selected");
     }
     return (
-        <>
-            <div className={ classes.join(" ") } style={ nodeStyle }>
-                <Handle type="target" position={Position.Left} id="target" />
-                <p>{ data.label }</p>
-                <img src={ icon } width="50" height="50" />
-                <Handle type="source" position={Position.Right} id="source" />
-            </div>
-        </>
+        <div className={ classes.join(" ") } style={ nodeStyle }>
+            <Handle type="target" position={Position.Left} id="target" />
+            <p>{ data.label }</p>
+            <img src={ icon } width="50" height="50" />
+            <Handle type="source" position={Position.Right} id="source" />
+        </div>
     );
 }
 

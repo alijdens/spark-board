@@ -63,18 +63,6 @@ export default function App() {
     // controls the column for which the column graph is shown
     const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
 
-    // this function will start or stop the animation based on the settings
-    useEffect(() => {
-        if (nodesInitialized && settings.animationEnabled) {
-            // make sure to sync the node positions with the animation
-            animation.updatePositions(new Map(nodes.map(node => [node.id, node.position])));
-            // start the animation and return the stop function to pause it when unmounted
-            return animation.start();
-        } else if (!settings.animationEnabled) {
-            animation.pause();
-        }
-    }, [nodesInitialized, settings]);
-
     // this should be called after the nodes are initialized to organize the viewport and initial positions
     useEffect(() => {
         if (nodesInitialized) {
@@ -87,7 +75,22 @@ export default function App() {
             // orgnaize the nodes
             organizeNodes();
         }
-    }, [nodesInitialized]);
+    }, [nodesInitialized, settings]);
+
+    // this function will start or stop the animation based on the settings
+    useEffect(() => {
+        if (nodesInitialized && settings.animationEnabled) {
+            // make sure to sync the node positions with the animation
+            animation.updatePositions(new Map(nodes.map(node => [node.id, node.position])));
+            // start the animation and return the stop function to pause it when unmounted
+            return animation.start();
+        } else if (!settings.animationEnabled) {
+            animation.pause();
+        }
+    }, [nodesInitialized, settings, animation, nodes]);
+
+    // hook that renders the column graph
+    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn);
 
     // callback that organizes the nodes in the screen using the default layout
     const organizeNodes = useCallback(() => {
@@ -121,7 +124,7 @@ export default function App() {
             setSelectedTransformation(node);
             setSelectedColumn(null);
         }
-    }, [selectedTransformation, selectedColumn]);
+    }, []);
 
     const onNodeDragStart = useCallback((event, node) => {
         // fix node to the position where the user drops the node
