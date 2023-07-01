@@ -46,12 +46,14 @@ function TransformationNode({ id, data }) {
         classes.push("transformation-node-selected");
     }
     return (
-        <div className={ classes.join(" ") } style={ nodeStyle }>
-            <Handle type="target" position={Position.Left} id="target" />
-            <p>{ data.label }</p>
-            <img src={ icon } width="50" height="50" />
-            <Handle type="source" position={Position.Right} id="source" />
-        </div>
+        <>
+            <div className={ classes.join(" ") } style={ nodeStyle }>
+                <Handle type="target" position={Position.Left} id="target" />
+                <p>{ data.label }</p>
+                <img src={ icon } width="50" height="50" />
+                <Handle type="source" position={Position.Right} id="source" />
+            </div>
+        </>
     );
 }
 
