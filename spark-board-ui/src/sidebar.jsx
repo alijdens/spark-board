@@ -88,16 +88,17 @@ function transformationData(transformationNode) {
 }
 
 function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColumn }) {
+    const logoStyle = { width: "100%" };
     if (!node) {
         // if no node is selected, do not render the sidebar
         return <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
-            <img src={ SparkBoardLogo } style={{width: width, minWidth: width}} />
+            <img src={ SparkBoardLogo } style={logoStyle} />
             <h3 style={{textAlign: "center"}}>Just select one node!</h3>
         </div>
     }
     return (
         <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
-            <img src={ SparkBoardLogo } style={{width: width, minWidth: width}} />
+            <img src={ SparkBoardLogo } style={logoStyle} />
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
             <Section title="Output Columns" defaultExpanded="true">
                 {
