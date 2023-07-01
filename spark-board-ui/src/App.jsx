@@ -90,7 +90,7 @@ export default function App() {
     }, [nodesInitialized, settings, animation, nodes]);
 
     // hook that renders the column graph
-    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn);
+    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodes);
 
     // callback that organizes the nodes in the screen using the default layout
     const organizeNodes = useCallback(() => {
