@@ -30,7 +30,7 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
     const dt = 1/60;
     var startT = useRef(null);
 
-    function onFrame (t) {
+    function onFrame(t) {
         if (!startT.current) {
             startT.current = t;
         }
