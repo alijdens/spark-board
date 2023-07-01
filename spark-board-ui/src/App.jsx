@@ -75,7 +75,7 @@ export default function App() {
             // orgnaize the nodes
             organizeNodes();
         }
-    }, [nodesInitialized, settings]);
+    }, [nodesInitialized]);
 
     // this function will start or stop the animation based on the settings
     useEffect(() => {

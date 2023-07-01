@@ -30,7 +30,7 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
     const dt = 1/60;
     var startT = useRef(null);
 
-    const onFrame = useCallback((t) => {
+    function onFrame (t) {
         if (!startT.current) {
             startT.current = t;
         }
@@ -71,7 +71,7 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
 
         // wait for the next frame
         animationId.current = requestAnimationFrame(onFrame)
-    }, [state, nodeIdMapping, nodes, setNodes]);
+    }
 
     useEffect(() => {
         // update artificial node positions with new ones
