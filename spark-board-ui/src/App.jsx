@@ -54,11 +54,23 @@ export default function App() {
         column: ColumnNode
     }), []);
 
-    const [transformationNodePositions, setTransformationNodePositions] = React.useState(new Map(
+    const [transformationNodeTargetPositions, setTransformationNodeTargetPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
+    const [transformationNodeCurrentPositions, setTransformationNodeCurrentPositions] = React.useState(new Map(
+        model_initialNodes.map(node => [node.id, {x: 0, y: 0}])
+    ));
     const nodesInitialized = useNodesInitialized();
-    const animation = useDagAnimation(nodes, edges, transformationNodePositions, setNodes);
+    const animation = useDagAnimation(nodes, edges, transformationNodeTargetPositions, setTransformationNodeCurrentPositions);
+
+    useEffect(() => {
+        setNodes(nodes.map(node => {
+            if (node.type == "transformation") {
+                node.position = transformationNodeCurrentPositions.get(node.id);
+            }
+            return node;
+        }));
+    }, [transformationNodeCurrentPositions]);
 
     // controls the column for which the column graph is shown
     const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
@@ -69,7 +81,7 @@ export default function App() {
             // calculate the node positions in the screen
             const [dagLayout, bounds] = buildLayout(model_initialEdges[0].source, model_initialEdges);
             // set the node animation to position in the layout
-            setTransformationNodePositions(dagLayout);
+            setTransformationNodeTargetPositions(dagLayout);
             // fit the viewport to the area of the graph
             fitBounds(bounds, { duration: 0, padding: 0.1 });
             // orgnaize the nodes

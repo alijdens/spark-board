@@ -62,7 +62,7 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
             }
             return node;
         });
-    }), [columnGraph, setNodes, nodes]);
+    }), [columnGraph]);
 
     // Effect over edges for the selected column graph
     useEffect(() => setEdges((eds) => eds.map((edge) => {

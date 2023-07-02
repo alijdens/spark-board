@@ -13,12 +13,12 @@ import { stepSimulation } from './physics';
  * @param {Array} nodes react-flow nodes.
  * @param {Array} edges react-flow edges.
  * @param {Map} targetPositions Map from the node IDs to the target positions (objects with `x` and `y`).
- * @param {Callback} setNodes react-flow state setter to update the nodes.
+ * @param {Callback} setCurrentPositions react-flow state setter to update the node positions.
  * @returns Two elements:
  *          1. Callback that will start the animation when called.
  *          2. Callback that will update the node positions with the ones given.
  */
-export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
+export function useDagAnimation(nodes, edges, targetPositions, setCurrentPositions) {
     // mass of the nodes in the phyical simulation
     const nodeMass = 0.3;
 
@@ -54,19 +54,16 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
 
         if (hasUpdated) {
             // update the node positions
-            setNodes(nodes.map((node) => {
+            setCurrentPositions(new Map(nodes.map((node) => {
                 if (node.type == "column") {
-                    return node
+                    return [node.id, node.position]
                 }
                 const i = nodeIdMapping.current.get(node.id);
-                return {
-                    ...node,
-                    position: {
-                        x: state.current[0][i * 2],
-                        y: state.current[0][i * 2 + 1]
-                    }
-                }
-            }));
+                return [node.id, {
+                    x: state.current[0][i * 2],
+                    y: state.current[0][i * 2 + 1]
+                }]
+            })));
         }
 
         // wait for the next frame
