@@ -63,6 +63,18 @@ export default function App() {
     const nodesInitialized = useNodesInitialized();
     const animation = useDagAnimation(nodes, edges, transformationNodeTargetPositions, setTransformationNodeCurrentPositions);
 
+    // this function will start or stop the animation based on the settings
+    useEffect(() => {
+        if (nodesInitialized && settings.animationEnabled) {
+            // make sure to sync the node positions with the animation
+            animation.updatePositions(new Map(nodes.map(node => [node.id, node.position])));
+            // start the animation and return the stop function to pause it when unmounted
+            return animation.start();
+        } else if (!settings.animationEnabled) {
+            animation.pause();
+        }
+    }, [nodesInitialized, settings]);
+
     useEffect(() => {
         setNodes(nodes.map(node => {
             if (node.type == "transformation") {
@@ -88,18 +100,6 @@ export default function App() {
             organizeNodes();
         }
     }, [nodesInitialized]);
-
-    // this function will start or stop the animation based on the settings
-    useEffect(() => {
-        if (nodesInitialized && settings.animationEnabled) {
-            // make sure to sync the node positions with the animation
-            animation.updatePositions(new Map(nodes.map(node => [node.id, node.position])));
-            // start the animation and return the stop function to pause it when unmounted
-            return animation.start();
-        } else if (!settings.animationEnabled) {
-            animation.pause();
-        }
-    }, [nodesInitialized, settings]);
 
     // hook that renders the column graph
     const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodes);
