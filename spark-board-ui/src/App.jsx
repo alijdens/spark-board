@@ -102,8 +102,11 @@ export default function App() {
     // controls the column for which the column graph is shown
     const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
 
+    // Map containing all nodes, both transformations and columns
+    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
+
     // hook that renders the column graph
-    drawColumnGraph(setNodes, setEdges, selectedColumn);
+    drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
 
     // Callback to set one node as selected, and reset the column tracking
     const onNodeClick = useCallback((event, node) => {
@@ -126,7 +129,11 @@ export default function App() {
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-            <SideBar width="400px" node={selectedTransformation} onSelectedColumnChange={setSelectedColumn} selectedColumn={selectedColumn} />
+            <SideBar width="400px" 
+                node={selectedTransformation} 
+                nodesById={nodesById}
+                onSelectedColumnChange={setSelectedColumn} 
+                selectedColumn={selectedColumn} />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -150,4 +157,14 @@ export default function App() {
             </ReactFlow>
         </div>
     );
+}
+
+/**
+ * Generates a `Map` that maps the node id to the node itself.
+ * 
+ * @param {*} initialNodes List of transformation nodes.
+ * @returns Map of node id to node.
+ */
+function getNodesById(initialNodes) {
+    return new Map(initialNodes.map(node => [node.id, node]),);
 }

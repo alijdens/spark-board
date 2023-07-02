@@ -87,7 +87,7 @@ function transformationData(transformationNode) {
     }
 }
 
-function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
+function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColumn }) {
     if (!node) {
         // if no node is selected, do not render the sidebar
         return <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
@@ -101,7 +101,8 @@ function SideBar({ width, node, onSelectedColumnChange, selectedColumn }) {
             <h3 style={{textAlign: "center"}}>{node.data.type}</h3>
             <Section title="Output Columns" defaultExpanded="true">
                 {
-                    node.data.columns.map((col) => {
+                    node.data.columns.map((columnNodeId) => {
+                        let col = nodesById.get(columnNodeId);
                         return (
                             <div key={col.id}>
                                 <Tooltip title=
