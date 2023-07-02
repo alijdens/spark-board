@@ -99,7 +99,7 @@ export default function App() {
         } else if (!settings.animationEnabled) {
             animation.pause();
         }
-    }, [nodesInitialized, settings, animation, nodes]);
+    }, [nodesInitialized, settings]);
 
     // hook that renders the column graph
     const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodes);
