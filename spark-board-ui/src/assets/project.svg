@@ -1,11 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright 2020 by Northwoods Software -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 16 16">
-<!-- <path fill="#000000" d="M0 0 h1 v2 h4 L9 7 h4 v-1 l2 2 -2 2 v-1 h-4 L5 13 h-4 v2 h-1 v-5 h1 v2 h4 L7.5 7.5 5 3 h-4 v1 h-1 z"></path> -->
-<path fill="#000000" d="M0 0 h2 v15 h-2 z M13 5 h2 v5 h-2 z"></path>
-<path stroke="#000000" d="M1 1 L14 6"></path>
-<path stroke="#000000" d="M1 5 L14 7"></path>
-<path stroke="#000000" d="M1 10 L14 8"></path>
-<path stroke="#000000" d="M1 14 L14 9"></path>
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M2 13.122a1 1 0 00.741.966l7 1.876A1 1 0 0011 14.998V14h2a1 1 0 001-1V3a1 1 0 00-1-1h-2v-.994A1 1 0 009.741.04l-7 1.876A1 1 0 002 2.882v10.24zM9 2.31v11.384l-5-1.34V3.65l5-1.34zM11 12V4h1v8h-1z" fill="#000000"/>
 </svg>
