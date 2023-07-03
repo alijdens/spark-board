@@ -9,6 +9,7 @@ class TransformationType(enum.Enum):
     Join = "join"
     Source = "source"
     LogicalRDD = "logical_rdd"
+    Relation = "relation"
     Generate = "generate"
     Aggregate = "aggregate"
     Window = "window"
