@@ -45,12 +45,14 @@ function TransformationNode({ id, data }) {
     if (data.selected()) {
         classes.push("transformation-node-selected");
     }
+
     return (
         <>
             <div className={ classes.join(" ") } style={ nodeStyle }>
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
                 <img src={ icon } width="50" height="50" />
+                <Summary transformation_type={data.type} metadata={data.metadata} />
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
         </>
@@ -68,7 +70,7 @@ export function getTransformationStyle(transformationType) {
         case "Filter":
             return ["turquoise", FilterIcon];
 
-        case "Table":
+        case "DataSource":
             return ["lightgray", TableIcon];
 
         case "Transform":
@@ -117,6 +119,57 @@ export function getTransformationStyle(transformationType) {
             console.log("WARN: Unknown transformation type: '" + transformationType + "'. Showing a white node")
             return ["white", TableIcon]
     }
+}
 
-    throw new Error("Unknown transformation type: " + transformationType);
+/**
+ * Returns the HTML element that will render the node summary, which is the
+ * data shown below the icon.
+ *
+ * @param {string} type Transformation type. 
+ * @param {object} metadata Node metadata.
+ */
+function Summary({transformation_type, metadata}) {
+    switch(transformation_type) {
+        case "Project":
+            return <></>;
+
+        case "Filter":
+            return <></>;
+
+        case "DataSource":
+            if (metadata.type === "relation")
+                return <div>
+                    <p><b>{metadata.type}:</b><br />
+                    {metadata.database}.{metadata.table}</p>
+                </div>
+            else
+                return <div>
+                    <p>{metadata.type}</p>
+                </div>
+
+        case "Transform":
+            return <></>;
+
+        case "Group":
+            return <></>;
+
+        case "Join":
+            return <></>;
+
+        case "Sort":
+            return <></>;
+
+        case "Window":
+            return <></>;
+
+        case "Union":
+            return <></>;
+
+        case "Limit":
+            return <></>;
+
+        default:
+            // TODO: Handle this
+            return <></>;
+    }
 }

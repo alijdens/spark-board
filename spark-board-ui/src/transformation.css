@@ -3,6 +3,7 @@
   border-radius: 10px;
   border: 2px solid black;
   text-align: center;
+  padding: 10px;
 
   /* make the container expand so the size of the div that wraps nodes */
   width: 100%;
