@@ -56,6 +56,7 @@ export default function App() {
     const [transformationNodeTargetPositions, setTransformationNodeTargetPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
+    // positions where the nodes are drawn (when nodes are being animated)
     const [transformationNodeCurrentPositions, setTransformationNodeCurrentPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, {x: 0, y: 0}])
     ));
