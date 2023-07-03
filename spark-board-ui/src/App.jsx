@@ -52,6 +52,7 @@ export default function App() {
         column: ColumnNode
     }), []);
 
+    // positions where the nodes are being pulled to (if the animation is enabled)
     const [transformationNodeTargetPositions, setTransformationNodeTargetPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
