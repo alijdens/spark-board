@@ -40,9 +40,6 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
     // the column graph will contain the column node IDs that are related to the selected column
     const [columnGraph, setColumnGraph] = React.useState([]);
 
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
-
     // find the selected column graph
     useEffect(() =>
         setColumnGraph(buildColumnGraph(nodesById, selectedColumn))

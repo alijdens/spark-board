@@ -101,8 +101,11 @@ export default function App() {
         }
     }, [nodesInitialized]);
 
+    // Map containing all nodes, both transformations and columns
+    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
+
     // hook that renders the column graph
-    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodes);
+    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
 
     // callback that organizes the nodes in the screen using the default layout
     const organizeNodes = useCallback(() => {
@@ -123,9 +126,6 @@ export default function App() {
         }
         setSelectedColumn(selectedColumn);
     }, [settings, nodes, setNodes, setSelectedColumn]);
-
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
 
     // hook that renders the column graph
     drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
