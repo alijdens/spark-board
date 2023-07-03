@@ -4,14 +4,22 @@
 
 import { Handle, Position } from 'reactflow';
 
+import AddColumnIcon from './assets/addColumn.svg';
+import AliasIcon from './assets/alias.svg';
+import ExceptIcon from './assets/except.svg';
+import ExpandIcon from './assets/expand.svg';
 import FilterIcon from './assets/filter.svg';
 import GroupIcon from './assets/group.svg';
+import IntersectIcon from './assets/intersect.svg';
 import JoinIcon from './assets/join.svg';
+import PartitionIcon from './assets/partition.svg';
 import ProjectIcon from './assets/project.svg';
+import SampleIcon from './assets/sample.svg';
 import SortIcon from './assets/sort.svg';
 import TableIcon from './assets/table.svg';
-import UploadIcon from './assets/upload.svg';
+import TransformIcon from './assets/transform.svg';
 import UnionIcon from './assets/union.png';
+import UploadIcon from './assets/upload.svg';
 import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
@@ -44,37 +52,58 @@ export default TransformationNode;
 export function getTransformationStyle(transformationType) {
     switch(transformationType) {
         case "Project":
-            return ["orange", ProjectIcon];
+            return ["gold", ProjectIcon];
 
         case "Filter":
-            return ["lightblue", FilterIcon];
+            return ["turquoise", FilterIcon];
 
         case "Table":
-            return ["red", TableIcon];
+            return ["lightgray", TableIcon];
 
         case "Transform":
-            return ["gray", UploadIcon];
+            return ["limegreen", TransformIcon];
 
         case "Group":
-            return ["purple", GroupIcon];
+            return ["lightgreen", GroupIcon];
 
         case "Join":
-            return ["green", JoinIcon];
+            return ["violet", JoinIcon];
 
         case "Sort":
-            return ["yellow", SortIcon];
+            return ["pink", SortIcon];
 
         case "Window":
-            return ["pink", TableIcon];
+            return ["orange", TableIcon];
 
         case "Union":
-            return ["brown", UnionIcon];
+            return ["skyblue", UnionIcon];
 
         case "Limit":
-            return ["lightgreen", GlobalLimitIcon];
+            return ["green", GlobalLimitIcon];
+
+        case "Except":
+            return ["blue", ExceptIcon];
+
+        case "Sample":
+            return ["yellow", SampleIcon];
+
+        case "Expand":
+            return ["red", ExpandIcon];
+
+        case "Repartition":
+            return ["magenta", PartitionIcon];
+
+        case "Intersect":
+            return ["lightblue", IntersectIcon];
+
+        case "Deduplicate":
+            return ["silver", FilterIcon];
+
+        case "Alias":
+            return ["gray", AliasIcon];
 
         default:
-            // TODO: Handle this
+            console.log("WARN: Unknown transformation type: '" + transformationType + "'. Showing a white node")
             return ["white", TableIcon]
     }
 
