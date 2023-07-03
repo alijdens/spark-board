@@ -35,9 +35,7 @@ export default function App() {
             selectedTransformation !== null && selectedTransformation.data == node.data
         );
 
-        if (node.position === undefined) {
-            node.position = (node.type == "transformation" ? {x: 0, y: 0} : {x: 0, y: 25});
-        }
+        node.position = (node.type == "transformation" ? {x: 0, y: 0} : {x: 0, y: 25});
 
         if (node.type == "column") {
             node.draggable = false;
