@@ -124,8 +124,7 @@ export default function App() {
                 return node;
             }));
         }
-        setSelectedColumn(selectedColumn);
-    }, [settings, nodes, setNodes, setSelectedColumn]);
+    }, [settings, nodes, setNodes]);
 
     // hook that renders the column graph
     drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
