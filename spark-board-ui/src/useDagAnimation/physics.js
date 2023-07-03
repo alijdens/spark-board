@@ -20,6 +20,12 @@ export function stepSimulation(state, dt) {
         // indices for the vector arrays
         const [ix, iy] = [i * 2, i * 2 + 1];
 
+        if (mass[i] == Infinity) {
+            // infinite masses cannot be moved, so it doesn't make sense to calculate their forces
+            v[ix] = 0; v[iy] = 0;
+            continue;
+        }
+
         // calculate the force acting on the node
         // we start by adding a force that will dampen the velocity
         const F = {x: -d * v[ix], y: -d * v[iy]};
