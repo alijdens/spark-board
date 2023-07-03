@@ -34,42 +34,42 @@ function transformationData(transformationNode) {
     switch (transformationNode.data.type) {
         case "Join":
             return (<div>
-                    Condition: { transformationNode.data.condition }
+                    Condition: { transformationNode.data.metadata.condition }
                     <p/>
-                    Join Type: { transformationNode.data.join_type }
+                    Join Type: { transformationNode.data.metadata.join_type }
                 </div>)
         case "Filter":
             return (<div>
-                    Condition: { transformationNode.data.condition }
+                    Condition: { transformationNode.data.metadata.condition }
                 </div>)
 
         case "Project":
             return (<div className="multiline" >
-                    Schema String:<p/>{ transformationNode.data.schema_string }
+                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
                 </div>)
-        case "Table":
+        case "DataSource":
             return (<div className="multiline">
-                    Schema String:<p/>{ transformationNode.data.schema_string }
+                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
                 </div>)
         case "Window":
             return (<div className="multiline">
-                    Schema String:<p/>{ transformationNode.data.schema_string }
+                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
                 </div>)            
 
         case "Transform":
             return (<div>
-                    Generator: { transformationNode.data.generator }
+                    Generator: { transformationNode.data.metadata.generator }
                 </div>)
 
         case "Group":
             return (<div>
                     Aggregate Expressions: <ul>{
-                        transformationNode.data.aggregate_expressions.map((exp) => (
+                        transformationNode.data.metadata.aggregate_expressions.map((exp) => (
                             <li>{ exp }</li>
                         ))
                     }</ul>
                     Grouping Expressions: <ul>{
-                        transformationNode.data.grouping_expressions.map((exp) => (
+                        transformationNode.data.metadata.grouping_expressions.map((exp) => (
                             <li>{ exp }</li>
                         ))
                     }</ul>

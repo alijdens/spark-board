@@ -107,7 +107,7 @@ def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
             # label to display in the node
             "label": node_type_map[node.type],
             # Metadata depending on node type
-            **node.metadata,
+            "metadata": node.metadata,
             "columns": [_get_column_id(column) for column in node.columns.values()],
         },
     }
