@@ -34,13 +34,11 @@ export function useColumnGraphState(initialColumn) {
  * @param {callback} setNodes callback returned by react-flow.
  * @param {callback} setEdges callback returned by react-flow.
  * @param {node} selectedColumn Column to show the graph for (or null).
+ * @param {Map} nodesById a dictionary of all nodes by id-
  */
-function drawColumnGraph(setNodes, setEdges, selectedColumn) {
+function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
     // the column graph will contain the column node IDs that are related to the selected column
     const [columnGraph, setColumnGraph] = React.useState([]);
-    
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
 
     // find the selected column graph
     useEffect(() =>
@@ -69,16 +67,6 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn) {
 
 export default drawColumnGraph;
 
-
-/**
- * Generates a `Map` that maps the node id to the node itself.
- * 
- * @param {*} initialNodes List of transformation nodes.
- * @returns Map of node id to node.
- */
-function getNodesById(initialNodes) {
-    return new Map(initialNodes.map(node => [node.id, node]),);
-}
 
 /**
  * Builds the column graph for the selected column. This graph relates the
