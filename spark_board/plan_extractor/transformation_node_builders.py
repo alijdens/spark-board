@@ -1,6 +1,8 @@
 from py4j.java_gateway import JavaObject
 from typing import List, Dict, Any, Generator, Optional
 
+from spark_board.plan_extractor.transformations_dag import Metadata, TransformationType
+
 from .transformations_dag import TransformationNode, Metadata, TransformationType, TransformationColumn
 from .py4j_utils import iterate_java_object
 
@@ -108,10 +110,30 @@ class FilterNodeBuilder(TransformationNodeBuilder):
 class LogicalRDDNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         # TODO: collect metadata about RDD columns
-        pass
+        metadata["type"] = "Logical RDD"
 
     def _get_type(self) -> TransformationType:
         return TransformationType.LogicalRDD
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return 0
+
+
+class LogicalRelationNodeBuilder(TransformationNodeBuilder):
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["type"] = "relation"
+        metadata["file_format"] = node.relation().fileFormat().toString()
+
+        catalog_table_option = node.catalogTable()
+        if not catalog_table_option.isEmpty():
+            catalog_table = catalog_table_option.get()
+            metadata["database"] = catalog_table.database()
+            metadata["table"] = catalog_table.identifier().table()
+            metadata["partition_columns"] = [name for name in iterate_java_object(catalog_table.partitionColumnNames())]
+            metadata["storage"] = catalog_table.storage().toString()
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Relation
 
     def _expected_number_of_nodes(self) -> Optional[int]:
         return 0
@@ -319,6 +341,7 @@ def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
         "Project": ProjectNodeBuilder(),
         "Filter": FilterNodeBuilder(),
         "LogicalRDD": LogicalRDDNodeBuilder(),
+        "LogicalRelation": LogicalRelationNodeBuilder(),
         "Join": JoinNodeBuilder(),
         "Generate": GenerateNodeBuilder(),
         "Aggregate": AggregateNodeBuilder(),
@@ -327,7 +350,6 @@ def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
         "Union": UnionNodeBuilder(),
         "GlobalLimit": LimitNodeBuilder(),
         "LocalLimit": LimitNodeBuilder(),
-        # "relation": RelationNodeBuilder(),
         "Repartition": RepartitionNodeBuilder(),
         "Deduplicate": DeduplicateNodeBuilder(),
         "Except": ExceptNodeBuilder(),

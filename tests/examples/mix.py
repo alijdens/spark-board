@@ -1,8 +1,10 @@
 from pyspark.sql import functions as F
 from tests.context import spark
 
+# convert into table
+spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>").write.saveAsTable("people")
 
-people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
+people = spark.table("people")
 cities = spark.createDataFrame([], schema="struct<city:string, zip_code:string, lat:float, lon:float>")
 countries = spark.createDataFrame([], schema="struct<country:string, city:string, continent:string>")
 continent = spark.createDataFrame([], schema="struct<continent:string, continent_code:int>")
