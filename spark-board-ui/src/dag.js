@@ -45,7 +45,7 @@ export function buildLayout(root_id, edges) {
             node_pos.x = depth * 200;
 
             // update the leaf nodes y position for the next one
-            leaf_nodes_y += nodeElem.offsetHeight;
+            leaf_nodes_y += nodeElem.scrollHeight;
             leaf_nodes_y += vMargin;
         } else {
             // calculate the area occupied by the direct children: find the
@@ -57,11 +57,11 @@ export function buildLayout(root_id, edges) {
             const child_y_end = Math.max(...yData.map((data) => data.y + data.height));
  
             // calculate the middle point between this node's first and last child
-            node_pos.y = (child_y_start + child_y_end) / 2 - nodeElem.offsetHeight / 2;
+            node_pos.y = (child_y_start + child_y_end) / 2 - nodeElem.scrollHeight / 2;
 
             node_pos.x = depth * 200;
         }
-        return { y: node_pos.y, height: nodeElem.offsetHeight };
+        return { y: node_pos.y, height: nodeElem.scrollHeight };
     }
 
     _calculate_position(root_id, 0);
@@ -70,7 +70,7 @@ export function buildLayout(root_id, edges) {
     // lefmost and bottommost nodes
     const totalW = Math.max(...Array.from(positions).map(([id, pos]) => {
         // important: account for node width too
-        return pos.x + getNodeElem(id).offsetWidth;
+        return pos.x + getNodeElem(id).scrollWidth;
     }));
     const totalH = leaf_nodes_y;
 
