@@ -56,12 +56,8 @@ export default function App() {
     const [transformationNodeTargetPositions, setTransformationNodeTargetPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
-    // positions where the nodes are drawn (when nodes are being animated)
-    const [transformationNodeCurrentPositions, setTransformationNodeCurrentPositions] = React.useState(new Map(
-        model_initialNodes.map(node => [node.id, {x: 0, y: 0}])
-    ));
     const nodesInitialized = useNodesInitialized();
-    const animation = useDagAnimation(nodes, edges, transformationNodeTargetPositions, setTransformationNodeCurrentPositions);
+    const animation = useDagAnimation(nodes, edges, transformationNodeTargetPositions, setNodes);
 
     // this function will start or stop the animation based on the settings
     useEffect(() => {
@@ -74,15 +70,6 @@ export default function App() {
             animation.pause();
         }
     }, [nodesInitialized, settings]);
-
-    useEffect(() => {
-        setNodes(nodes.map(node => {
-            if (node.type == "transformation") {
-                node.position = transformationNodeCurrentPositions.get(node.id);
-            }
-            return node;
-        }));
-    }, [transformationNodeCurrentPositions]);
 
     // controls the column for which the column graph is shown
     const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { createSystem, getSprings } from './createSystem';
 import { stepSimulation } from './physics';
 
@@ -18,7 +18,12 @@ import { stepSimulation } from './physics';
  *          1. Callback that will start the animation when called.
  *          2. Callback that will update the node positions with the ones given.
  */
-export function useDagAnimation(nodes, edges, targetPositions, setCurrentPositions) {
+export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
+    // positions where the nodes are being pulled to (if the animation is enabled)
+    const [currentPositions, setCurrentPositions] = useState(new Map(
+        nodes.map(node => [node.id, node.position])
+    ));
+
     // mass of the nodes in the phyical simulation
     const nodeMass = 0.3;
 
@@ -69,6 +74,16 @@ export function useDagAnimation(nodes, edges, targetPositions, setCurrentPositio
         // wait for the next frame
         animationId.current = requestAnimationFrame(onFrame)
     }
+
+    // update the transformation nodes when the current position changes
+    useEffect(() => {
+        setNodes((nds) => nds.map(node => {
+            if (node.type == "transformation") {
+                node.position = currentPositions.get(node.id);
+            }
+            return node;
+        }));
+    }, [currentPositions]);
 
     useEffect(() => {
         // update artificial node positions with new ones
