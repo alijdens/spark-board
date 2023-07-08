@@ -66,3 +66,9 @@ class TransformationNode:
         print("  " * indent + f"{self.type.name} {self.metadata}")
         for child in self.children:
             child.pprint(indent=indent + 1)
+
+
+@dataclasses.dataclass
+class Condition:
+    sql: str
+    columns: Dict[int, TransformationColumn]

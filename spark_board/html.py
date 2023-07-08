@@ -32,7 +32,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists."""
 
-    tree = build_dag(df=df)
+    tree = build_dag(df=df, enable_heuristics=False)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(

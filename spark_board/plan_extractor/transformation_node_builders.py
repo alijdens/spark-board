@@ -1,9 +1,7 @@
 from py4j.java_gateway import JavaObject
 from typing import List, Dict, Any, Generator, Optional
 
-from spark_board.plan_extractor.transformations_dag import Metadata, TransformationType
-
-from .transformations_dag import TransformationNode, Metadata, TransformationType, TransformationColumn
+from .transformations_dag import Condition, Metadata, TransformationColumn, TransformationNode, TransformationType
 from .py4j_utils import iterate_java_object
 
 
@@ -79,6 +77,9 @@ class TransformationNodeBuilder(object):
 
     def _expected_number_of_nodes(self) -> Optional[int]:
         raise NotImplementedError("Abstract method")
+
+    def _extract_condition(self, node: JavaObject) -> Condition:
+        return Condition("", {})
 
 
 class ProjectNodeBuilder(TransformationNodeBuilder):
