@@ -13,17 +13,12 @@ import { stepSimulation } from './physics';
  * @param {Array} nodes react-flow nodes.
  * @param {Array} edges react-flow edges.
  * @param {Map} targetPositions Map from the node IDs to the target positions (objects with `x` and `y`).
- * @param {Callback} setCurrentPositions react-flow state setter to update the node positions.
+ * @param {Callback} setNodes react-flow state setter to update the nodes.
  * @returns Two elements:
  *          1. Callback that will start the animation when called.
  *          2. Callback that will update the node positions with the ones given.
  */
 export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
-    // positions where the nodes are being pulled to (if the animation is enabled)
-    const [currentPositions, setCurrentPositions] = useState(new Map(
-        nodes.map(node => [node.id, node.position])
-    ));
-
     // mass of the nodes in the phyical simulation
     const nodeMass = 0.3;
 
@@ -59,31 +54,21 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
 
         if (hasUpdated) {
             // update the node positions
-            setCurrentPositions(new Map(nodes.map((node) => {
-                if (node.type == "column") {
-                    return [node.id, node.position]
+            setNodes((nds) => nds.map(node => {
+                if (node.type == "transformation") {
+                    const i = nodeIdMapping.current.get(node.id);
+                    node.position = {
+                        x: state.current[0][i * 2],
+                        y: state.current[0][i * 2 + 1]
+                    }
                 }
-                const i = nodeIdMapping.current.get(node.id);
-                return [node.id, {
-                    x: state.current[0][i * 2],
-                    y: state.current[0][i * 2 + 1]
-                }]
-            })));
+                return node;
+            }));
         }
 
         // wait for the next frame
         animationId.current = requestAnimationFrame(onFrame)
     }
-
-    // update the transformation nodes when the current position changes
-    useEffect(() => {
-        setNodes((nds) => nds.map(node => {
-            if (node.type == "transformation") {
-                node.position = currentPositions.get(node.id);
-            }
-            return node;
-        }));
-    }, [currentPositions]);
 
     useEffect(() => {
         // update artificial node positions with new ones
