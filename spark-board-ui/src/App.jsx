@@ -36,6 +36,10 @@ export default function App() {
         );
 
         node.position = (node.type == "transformation" ? {x: 0, y: 0} : {x: 0, y: 25});
+
+        if (node.type == "column") {
+            node.draggable = false;
+        }
     });
     const [settings, setSetting] = useSettings(model_defaultSettings);
 
@@ -48,11 +52,12 @@ export default function App() {
         column: ColumnNode
     }), []);
 
-    const [transformationNodePositions, setTransformationNodePositions] = React.useState(new Map(
+    // positions where the nodes are being pulled to (if the animation is enabled)
+    const [transformationNodeTargetPositions, setTransformationNodeTargetPositions] = React.useState(new Map(
         model_initialNodes.map(node => [node.id, node.position])
     ));
     const nodesInitialized = useNodesInitialized();
-    const animation = useDagAnimation(nodes, edges, transformationNodePositions, setNodes);
+    const animation = useDagAnimation(nodes, edges, transformationNodeTargetPositions, setNodes);
 
     // this function will start or stop the animation based on the settings
     useEffect(() => {
@@ -66,19 +71,28 @@ export default function App() {
         }
     }, [nodesInitialized, settings]);
 
+    // controls the column for which the column graph is shown
+    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
+
     // this should be called after the nodes are initialized to organize the viewport and initial positions
     useEffect(() => {
         if (nodesInitialized) {
             // calculate the node positions in the screen
             const [dagLayout, bounds] = buildLayout(model_initialEdges[0].source, model_initialEdges);
             // set the node animation to position in the layout
-            setTransformationNodePositions(dagLayout);
+            setTransformationNodeTargetPositions(dagLayout);
             // fit the viewport to the area of the graph
             fitBounds(bounds, { duration: 0, padding: 0.1 });
             // orgnaize the nodes
             organizeNodes();
         }
     }, [nodesInitialized]);
+
+    // Map containing all nodes, both transformations and columns
+    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
+
+    // hook that renders the column graph
+    const columnGraph = drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
 
     // callback that organizes the nodes in the screen using the default layout
     const organizeNodes = useCallback(() => {
@@ -99,12 +113,6 @@ export default function App() {
         }
     }, [settings, nodes, setNodes]);
 
-    // controls the column for which the column graph is shown
-    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
-
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(model_initialNodes), [model_initialNodes]);
-
     // hook that renders the column graph
     drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
 
@@ -114,7 +122,7 @@ export default function App() {
             setSelectedTransformation(node);
             setSelectedColumn(null);
         }
-    }, [selectedTransformation, selectedColumn]);
+    }, []);
 
     const onNodeDragStart = useCallback((event, node) => {
         // fix node to the position where the user drops the node

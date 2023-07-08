@@ -7,10 +7,8 @@ import { Handle, Position } from 'reactflow';
 import "./column.css";
 
 function ColumnNode({ data }) {
-    const nodeStyle = {};
-
     return (
-        <div className="column-node__container" style={ nodeStyle } >
+        <div className="column-node__container" >
             <Handle type="target" position={Position.Left} id="target" />
             <p>{ data.name }</p>
             <Handle type="source" position={Position.Right} id="source" />

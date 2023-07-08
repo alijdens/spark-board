@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { createSystem, getSprings } from './createSystem';
 import { stepSimulation } from './physics';
 
@@ -54,18 +54,15 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
 
         if (hasUpdated) {
             // update the node positions
-            setNodes(nodes.map((node) => {
-                if (node.type == "column") {
-                    return node
-                }
-                const i = nodeIdMapping.current.get(node.id);
-                return {
-                    ...node,
-                    position: {
+            setNodes((nds) => nds.map(node => {
+                if (node.type == "transformation") {
+                    const i = nodeIdMapping.current.get(node.id);
+                    node.position = {
                         x: state.current[0][i * 2],
                         y: state.current[0][i * 2 + 1]
                     }
                 }
+                return node;
             }));
         }
 

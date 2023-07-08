@@ -2,7 +2,7 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, useStore } from 'reactflow';
 
 import AddColumnIcon from './assets/addColumn.svg';
 import AliasIcon from './assets/alias.svg';
@@ -23,11 +23,22 @@ import UploadIcon from './assets/upload.svg';
 import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
-function TransformationNode({ data }) {
+function TransformationNode({ id, data }) {
+    // This resizes the NodeWrapper when the div is resized
+    const size = useStore((s) => {
+        const node = s.nodeInternals.get(id);
+        return {
+            height: node.height,
+            width: node.width,
+        };
+    });
+
     const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
         backgroundColor: color,
+        height: size.height,
+        width: size.width,
     }
 
     let classes = ["transformation-node__container"];
