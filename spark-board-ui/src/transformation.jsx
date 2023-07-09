@@ -130,11 +130,9 @@ export function getTransformationStyle(transformationType) {
  */
 function Summary({transformation_type, metadata}) {
     switch(transformation_type) {
-        case "Project":
-            return <></>;
+        case "Project": return <></>;
 
-        case "Filter":
-            return <></>;
+        case "Filter": return <></>;
 
         case "DataSource":
             if (metadata.type === "relation")
@@ -147,29 +145,42 @@ function Summary({transformation_type, metadata}) {
                     <p>{metadata.type}</p>
                 </div>
 
-        case "Transform":
-            return <></>;
+        case "Transform": return <></>;
 
-        case "Group":
-            return <></>;
+        case "Group": return <></>;
 
-        case "Join":
-            return <></>;
+        case "Join": return <p><b>Type:</b> {metadata.join_type}</p>;
 
-        case "Sort":
-            return <></>;
+        case "Sort": return <></>;
 
-        case "Window":
-            return <></>;
+        case "Window": return <></>;
 
-        case "Union":
-            return <></>;
+        case "Union": return <></>;
 
-        case "Limit":
-            return <></>;
+        case "Limit": return <p><b>Rows: </b>{metadata.limit_expr}</p>;
+
+        case "Except": return <p><b>Preserve duplicates:</b> {metadata.preserves_duplicates}</p>;
+        
+        case "Sample":
+            return <div>
+                <p><b>Seed: </b>{metadata.seed}</p><br />
+                <p><b>Fraction: </b>{metadata.fraction}</p>
+            </div>    
+
+        case "Expand": return <></>
+
+        case "Repartition": return <p><b>Num partitions:</b> {metadata.num_partitions}</p>
+
+        case "Intersect":
+            return <p><b>Preserve duplicates:</b> {metadata.preserves_duplicates}</p>
+
+        case "Deduplicate": return <></>
+
+        case "Alias": return <p>{metadata.alias}</p>
 
         default:
             // TODO: Handle this
+            console.log(`Unhandled transformation '${transformation_type}'`);
             return <></>;
     }
 }
