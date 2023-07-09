@@ -2,6 +2,10 @@
  * Module that implements some DAG algorithms.
  */
 
+
+// margin between nodes in the horizontal coordinates
+const HORIZONTAL_MARGIN = 60;
+
 /**
  * Given a DAG, return the X and Y coordinates of each node in it to build
  * a proper 2D layout.
@@ -17,16 +21,14 @@ export function buildLayout(root_id, edges) {
        stacked vertically. except the X coordinate which is calculated using the
        node depth in the DAG. */
     const positions = new Map();
-    let leaf_nodes_y = 0
+    let leaf_nodes_y = 0;
 
     const vMargin = 30;  // vertical margin between nodes
 
     const adj_list = buildAdjacencyList(edges);
 
-    function getNodeElem(node_id) {
-        // returns the DOM element that contains the node with the given ID
-        return document.querySelectorAll(`[data-id="${node_id}"]`)[0];
-    }
+    const levelWidths = calculateDagLevelWidth(root_id, adj_list);
+    const levelOffset = calculateLevelOffset(root_id, adj_list);
 
     function _calculate_position(node_id, depth) {
         if (!positions.has(node_id)) {
@@ -38,11 +40,14 @@ export function buildLayout(root_id, edges) {
         // we need this to get the node height
         const nodeElem = getNodeElem(node_id);
 
+        // calculate the node X coordinate to center it horizontally in its level
+        const xCoord = levelOffset[depth] + (levelWidths.get(depth) - nodeElem.scrollWidth) / 2;
+
         if (!hasChildren(node_id, adj_list)) {
             // leaf nodes are positioned one "step" below the last leaf node
             // positioned so far
             node_pos.y = leaf_nodes_y;
-            node_pos.x = depth * 200;
+            node_pos.x = xCoord;
 
             // update the leaf nodes y position for the next one
             leaf_nodes_y += nodeElem.scrollHeight;
@@ -59,7 +64,7 @@ export function buildLayout(root_id, edges) {
             // calculate the middle point between this node's first and last child
             node_pos.y = (child_y_start + child_y_end) / 2 - nodeElem.scrollHeight / 2;
 
-            node_pos.x = depth * 200;
+            node_pos.x = xCoord;
         }
         return { y: node_pos.y, height: nodeElem.scrollHeight };
     }
@@ -119,10 +124,79 @@ export function buildAdjacencyList(edges, bidirectional = false) {
     return adjacencyList;
 }
 
+/**
+ * Returns the element in the DOM that represents the node with the given ID.
+ * @param {string} nodeId Id of the node to get the element.
+ * @returns DOM element that represents the node.
+ */
+function getNodeElem(nodeId) {
+    // returns the DOM element that contains the node with the given ID
+    return document.querySelectorAll(`[data-id="${nodeId}"]`)[0];
+}
+
 function hasChildren(node_id, adj_list) {
     return adj_list.get(node_id).length > 0;
 }
 
 function nodeChildren(node_id, adj_list) {
     return adj_list.get(node_id);
+}
+
+/**
+ * Calculates the X coordinates for a node in a particular level of the DAG.
+ * @param {*} rootId Root node ID.
+ * @param {*} adjList Adjacency list that defines the DAG.
+ * @returns Array where each index is the X offset for the level.
+ */
+function calculateLevelOffset(rootId, adjList) {
+    const levelWidths = calculateDagLevelWidth(rootId, adjList);
+    const levelOffsets = [];
+
+    for (const [level, _] of levelWidths) {
+        if (level > 0) {
+            levelOffsets[level] = levelWidths.get(level - 1) + levelOffsets[level - 1] + HORIZONTAL_MARGIN;
+        } else {
+            levelOffsets[0] = 0;
+        }
+    }
+    return levelOffsets;
+}
+
+/**
+ * Calculate the width of each depth level in the DAG.
+ * 
+ * @param {string} rootId ID of the root node in the DAG.
+ * @param {Map} adjList Map from node IDs to a list of their child node IDs.
+ * @returns A map mapping the depth level (integer) to its total width.
+ */
+function calculateDagLevelWidth(rootId, adjList) {
+    // maps the DAG depth levels into their corresponding width
+    const levelWidths = new Map();
+
+    // stack of nodes not visited yet
+    const visitStack = [rootId];  // start by given root node
+
+    // map from the node ID to the depth level in the DAG
+    const nodeLevel = new Map();
+    nodeLevel.set(rootId, 0); // initialize root node as depth 0
+
+    while (visitStack.length > 0) {
+        const current = visitStack.pop();
+        const currentLevel = nodeLevel.get(current);
+        
+        const elem = getNodeElem(current);
+        
+        // the level width will be the widest element in it
+        if (!levelWidths.has(currentLevel) || levelWidths.get(currentLevel) < elem.scrollWidth) {
+            levelWidths.set(currentLevel, elem.scrollWidth);
+        }
+
+        // push child nodes of current node into the visit stack
+        for (let child of adjList.get(current)) {
+            visitStack.push(child);
+            nodeLevel.set(child, currentLevel + 1);
+        }
+    }
+
+    return levelWidths;
 }
