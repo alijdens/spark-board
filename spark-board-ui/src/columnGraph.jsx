@@ -118,13 +118,16 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
 }
 
 function applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes) {
+    let DOMNode = getNodeElem(node.id);
+    let nodeHeight = DOMNode.scrollHeight;
+
     if (node.id in visitedTransformationNodes) {
-        let h = max(120, 90 + visitedTransformationNodes[node.id] * 15);
+        let h = max(nodeHeight, 90 + visitedTransformationNodes[node.id] * 15);
         node.height = h;
         node.style = { ...node.style, height: h };
     } else {
-        node.height = 120;
-        node.style = { ...node.style, height: 120 };
+        node.height = nodeHeight;
+        node.style = { ...node.style, height: node.height };
     }
     return node;
 }
@@ -137,4 +140,9 @@ function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking) {
         currentEdge.hidden = true;
     }
     return currentEdge;
+}
+
+function getNodeElem(node_id) {
+    // returns the DOM element that contains the node with the given ID
+    return document.querySelectorAll(`[data-id="${node_id}"]`)[0];
 }
