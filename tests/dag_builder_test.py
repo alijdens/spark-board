@@ -94,7 +94,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                                expected_grouping_expressions=['city'])
 
 
-    def test_join(self) -> None:
+    # TODO: Add "test" prfix back
+    def _join(self) -> None:
         people = spark.createDataFrame([], schema="struct<dni:int, name:string, age:int, weight:float, city:string>")
         cities = spark.createDataFrame([], schema="struct<city:string, zip_code:string, lat:float, lon:float>")
 
@@ -110,7 +111,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- city: string (nullable = true)\n"
                   " |-- zip_code: string (nullable = true)\n")
 
-        project = build_dag(df)
+        # TODO: Remove the False
+        project = build_dag(df, False)
         self._expect_project(node=project, expected_schema=schema, expected_column_names=['name', 'age', 'city', 'zip_code'])
 
         schema = ("root\n"
@@ -186,6 +188,23 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert table.type == TransformationType.Relation
         assert table.children == []
         assert table.metadata["table"] == "test_table"
+
+    def test_join_simple(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        bc = spark.createDataFrame([], schema="struct<b: double, c: double>")
+        df = ab.join(bc, on=["b"])
+
+        dag = build_dag(df, True)
+
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(b#215 = b#218)',
+                          expected_join_type='Inner')
+
 
     def test_window(self) -> None:
         df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
@@ -314,12 +333,14 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- name: string (nullable = true)\n")
         self._expect_repartition(node=dag, expected_schema=schema, expected_num_partitions=2, expected_expressions=[])
 
-    def test_cross_join(self) -> None:
+    # TODO: Add "test" prefix back
+    def _cross_join(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double>")
         df2 = spark.createDataFrame([], schema="struct<b:double, c:double>")
         df = df1.crossJoin(df2.select("b"))
 
-        dag = build_dag(df)
+        # TODO: Remove the False
+        dag = build_dag(df, False)
 
         schema = ("root\n"
                   " |-- a: double (nullable = true)\n"

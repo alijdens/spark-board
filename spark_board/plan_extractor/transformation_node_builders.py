@@ -78,9 +78,6 @@ class TransformationNodeBuilder(object):
     def _expected_number_of_nodes(self) -> Optional[int]:
         raise NotImplementedError("Abstract method")
 
-    def _extract_condition(self, node: JavaObject) -> Condition:
-        return Condition("", {})
-
 
 class ProjectNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
@@ -144,12 +141,18 @@ class JoinNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
         metadata["condition"] = node.condition().toString()
         metadata["join_type"] = node.joinType().toString()
+        metadata["condition2"] = self._extract_condition(node)
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Join
 
     def _expected_number_of_nodes(self) -> Optional[int]:
         return 2
+
+    def _extract_condition(self, node: JavaObject) -> Condition:
+        cx = node.condition().x()
+        reference_ids = [ref.exprId().id() for ref in iterate_java_object(cx.references())]
+        return Condition(cx.toString(), reference_ids, cx.treeString())
 
 
 class GenerateNodeBuilder(TransformationNodeBuilder):

@@ -71,4 +71,5 @@ class TransformationNode:
 @dataclasses.dataclass
 class Condition:
     sql: str
-    columns: Dict[int, TransformationColumn]
+    column_ids: List[int]
+    tree_string: str

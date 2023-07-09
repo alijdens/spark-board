@@ -1,6 +1,6 @@
-from .transformations_dag import TransformationColumn, TransformationNode, TransformationType, Condition
+from .transformations_dag import Metadata, TransformationColumn, TransformationNode, TransformationType, Condition
 
-from typing import Dict
+from typing import Dict, List
 
 
 class Heuristic(object):
@@ -20,15 +20,53 @@ class MergeJoinAndProject(Heuristic):
     def apply(self, original: TransformationNode) -> TransformationNode:
         project_node = original
         join_node = original.children[0]
-        return TransformationNode(
+        new_node = TransformationNode(
             type=TransformationType.Join,
-            metadata=join_node.metadata,
+            metadata=self._merge_metadata(project_node.metadata, join_node.metadata),
             children=join_node.children,
-            columns=self._merge_columns(project_node.columns, join_node.columns),
+            columns=self._merge_columns(project_node.columns, join_node.columns, join_node.metadata["condition2"]),
         )
+        for c in new_node.columns.values():
+            c.node_id = new_node.id
+        return new_node
 
-    def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn]) -> Dict[int, TransformationColumn]:
-        return pcols
+    def _merge_metadata(self, pmeta: Metadata, jmeta: Metadata) -> Metadata:
+        return {
+            "condition": jmeta["condition2"].sql,
+            "join_type": jmeta["join_type"],
+            "schema_string": pmeta["schema_string"],
+        }
+
+    def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn], cond: Condition) -> Dict[int, TransformationColumn]:
+        result = {}
+        for col_id, col in pcols.items():
+            assert len(col.links) == 1
+            link = col.links[0]
+
+            links = []
+            tree_string = ""
+            if link.id in cond.column_ids:
+                links = flatten([jcols[i].links for i in cond.column_ids])
+                tree_string = cond.tree_string
+            else:
+                links = jcols[link.id].links
+                tree_string = col.tree_string
+
+            result[col_id] = TransformationColumn(
+                name=col.name,
+                id=col.id,
+                type=col.type,
+                node_id=col.node_id,
+                links=links,
+                tree_string=tree_string,
+            )
+
+        print(f"Result columns: {result}")
+        return result
+
+
+def flatten(l: List[List]) -> List:
+    return [item for sublist in l for item in sublist]
 
 
 all_heuristics = [

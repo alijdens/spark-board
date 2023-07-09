@@ -6,7 +6,7 @@ import dataclasses
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
-from .plan_extractor.transformations_dag import TransformationColumn, TransformationNode, TransformationType
+from .plan_extractor.transformations_dag import Condition, TransformationColumn, TransformationNode, TransformationType
 
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple
@@ -24,6 +24,11 @@ const model_initialEdges = {links};
 
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
+        if type(o) is Condition:
+            return {
+                "as_string": o.sql,
+                "tree_string": o.tree_string,
+            }
         return json.JSONEncoder.default(self, o)    
 
 
@@ -32,7 +37,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists."""
 
-    tree = build_dag(df=df, enable_heuristics=False)
+    tree = build_dag(df=df, enable_heuristics=True)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
