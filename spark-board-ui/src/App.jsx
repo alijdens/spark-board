@@ -113,6 +113,16 @@ export default function App() {
         }
     }, [settings, nodes, setNodes]);
 
+    // reorganize nodes when they change (possible in size)
+    useEffect(() => {
+        if (nodesInitialized) {
+            // calculate the node positions in the screen
+            const [dagLayout, _] = buildLayout(model_initialEdges[0].source, model_initialEdges);
+            // set the node animation to position in the layout
+            setTransformationNodeTargetPositions(dagLayout);
+        }
+    }, [nodesInitialized, nodes]);
+
     // hook that renders the column graph
     drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById);
 
