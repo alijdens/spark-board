@@ -140,7 +140,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         inner_join = project.children[0]
         self._expect_join(node=inner_join,
                           expected_schema=schema,
-                          expected_condition='Some((city#233 = city#239))',  # TODO: don't use hardcoded IDs
+                          expected_condition='Some((city#246 = city#252))',  # TODO: don't use hardcoded IDs
                           expected_join_type='Inner')
 
         schema = ("root\n"
