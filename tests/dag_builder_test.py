@@ -140,7 +140,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         inner_join = project.children[0]
         self._expect_join(node=inner_join,
                           expected_schema=schema,
-                          expected_condition='Some((city#233 = city#239))',
+                          expected_condition='Some((city#233 = city#239))',  # TODO: don't use hardcoded IDs
                           expected_join_type='Inner')
 
         schema = ("root\n"
@@ -168,6 +168,24 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         cities_rdd = inner_join.children[1]
         self._expect_rdd(node=cities_rdd, expected_schema=schema)
 
+    def test_data_source(self) -> None:
+        # convert into table
+        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("test_table")
+        
+        df = spark.table("test_table")
+        dag = build_dag(df)
+
+        # TODO: it seems that tables generate 2 nodes: an "Alias" and the "DataSource"
+        #       we could drop the alias in the final DAG because it's redundant
+        assert dag.type == TransformationType.Alias
+
+        assert len(dag.children) == 1
+
+        table = dag.children[0]
+
+        assert table.type == TransformationType.Relation
+        assert table.children == []
+        assert table.metadata["table"] == "test_table"
 
     def test_window(self) -> None:
         df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
