@@ -1,6 +1,6 @@
 from .transformations_dag import Metadata, TransformationColumn, TransformationNode, TransformationType, Condition
 
-from typing import Dict, List
+from typing import Dict, List, Set, TypeVar
 
 
 class Heuristic(object):
@@ -14,8 +14,8 @@ class Heuristic(object):
 
 class MergeJoinAndProject(Heuristic):
 
-    def __init__(self):
-        self.already_merged_joins = set()
+    def __init__(self) -> None:
+        self.already_merged_joins: Set[TransformationNode] = set()
 
     def can_apply(self, dag: TransformationNode) -> bool:
         if dag.type != TransformationType.Project:
@@ -80,7 +80,8 @@ class MergeJoinAndProject(Heuristic):
         return result
 
 
-def flatten(l: List[List]) -> List:
+T = TypeVar("T")
+def flatten(l: List[List[T]]) -> List[T]:
     return [item for sublist in l for item in sublist]
 
 
