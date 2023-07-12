@@ -29,12 +29,12 @@ class Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)    
 
 
-def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings) -> None:
+def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings, enable_heuristics: bool) -> None:
     """Create a visual representation of the given `dag` in HTML. The HTML
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists."""
 
-    tree = build_dag(df=df, enable_heuristics=True)
+    tree = build_dag(df=df, enable_heuristics=enable_heuristics)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
