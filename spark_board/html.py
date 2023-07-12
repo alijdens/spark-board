@@ -25,10 +25,7 @@ const model_initialEdges = {links};
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
         if type(o) is Condition:
-            return {
-                "as_string": o.sql,
-                "tree_string": o.tree_string,
-            }
+            return dataclasses.asdict(o)
         return json.JSONEncoder.default(self, o)    
 
 
