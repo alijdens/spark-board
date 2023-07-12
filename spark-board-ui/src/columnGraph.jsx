@@ -106,15 +106,12 @@ function buildColumnGraph(nodesById, column) {
         let currentColumnId = links.pop();
         let node = nodesById.get(currentColumnId);
         if (node == null) {
-            console.log("Node not found for id: " + currentColumnId);
+            console.log("WARN: Node not found: " + currentColumnId);
             continue;
         }
-        links.concat(node.data.linked_columns);
+        links.push(...node.data.linked_columns);
         columnIds.push(currentColumnId);
-
-        console.log("Partial: " + columnIds);
     }
-    console.log("Final: " + columnIds);
     return columnIds;
 }
 

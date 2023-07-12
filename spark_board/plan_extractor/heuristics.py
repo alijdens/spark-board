@@ -54,8 +54,7 @@ class MergeJoinAndProject(Heuristic):
         }
 
     def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn], cond: Condition) -> Dict[int, TransformationColumn]:
-        result = {}
-        for col_id, col in pcols.items():
+        for col in pcols.values():
             assert len(col.links) == 1
             link = col.links[0]
 
@@ -68,16 +67,10 @@ class MergeJoinAndProject(Heuristic):
                 links = jcols[link.id].links
                 tree_string = col.tree_string
 
-            result[col_id] = TransformationColumn(
-                name=col.name,
-                id=col.id,
-                type=col.type,
-                node_id=col.node_id,
-                links=links,
-                tree_string=tree_string,
-            )
+            col.links = links
+            col.tree_string = tree_string
 
-        return result
+        return pcols
 
 
 T = TypeVar("T")
