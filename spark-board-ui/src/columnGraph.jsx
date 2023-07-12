@@ -97,7 +97,7 @@ export default drawColumnGraph;
  * @returns 
  */
 function buildColumnGraph(nodesById, column) {
-    if (column === null) {
+    if (column == null) {
         return [];
     }
     return [column.id].concat(column.data.linked_columns.map((linkedId) =>
