@@ -14,9 +14,24 @@ class Heuristic(object):
 
 class MergeJoinAndProject(Heuristic):
 
+    def __init__(self):
+        self.already_merged_joins = set()
+
     def can_apply(self, dag: TransformationNode) -> bool:
-        return dag.type == TransformationType.Project and len(dag.children) == 1 and dag.children[0].type == TransformationType.Join
-    
+        if dag.type != TransformationType.Project:
+            return False
+        if len(dag.children) != 1:
+            return False
+        if dag.children[0].type != TransformationType.Join:
+            return False
+        if dag.children[0].metadata["join_type"] == "Cross":
+            # Cross Join doesn't add the extra Project, so removing it would be wrong
+            return False
+        if dag.children[0] in self.already_merged_joins:
+            # Avoid collapsing all subsequent Projects
+            return False
+        return True
+
     def apply(self, original: TransformationNode) -> TransformationNode:
         project_node = original
         join_node = original.children[0]
@@ -24,17 +39,18 @@ class MergeJoinAndProject(Heuristic):
             type=TransformationType.Join,
             metadata=self._merge_metadata(project_node.metadata, join_node.metadata),
             children=join_node.children,
-            columns=self._merge_columns(project_node.columns, join_node.columns, join_node.metadata["condition2"]),
+            columns=self._merge_columns(project_node.columns, join_node.columns, join_node.metadata["condition"]),
         )
         for c in new_node.columns.values():
             c.node_id = new_node.id
+        self.already_merged_joins.add(new_node)
         return new_node
 
-    def _merge_metadata(self, pmeta: Metadata, jmeta: Metadata) -> Metadata:
+    def _merge_metadata(self, proj_meta: Metadata, join_meta: Metadata) -> Metadata:
         return {
-            "condition": jmeta["condition2"].sql,
-            "join_type": jmeta["join_type"],
-            "schema_string": pmeta["schema_string"],
+            "condition": join_meta["condition"],
+            "join_type": join_meta["join_type"],
+            "schema_string": proj_meta["schema_string"],
         }
 
     def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn], cond: Condition) -> Dict[int, TransformationColumn]:
@@ -61,7 +77,6 @@ class MergeJoinAndProject(Heuristic):
                 tree_string=tree_string,
             )
 
-        print(f"Result columns: {result}")
         return result
 
 
@@ -75,6 +90,7 @@ all_heuristics = [
 
 
 def apply_heuristics(raw_dag: TransformationNode) -> TransformationNode:
+    # heuristics are applied with a "child-first" policy
     raw_dag.children = [apply_heuristics(child) for child in raw_dag.children]
 
     result_dag = raw_dag

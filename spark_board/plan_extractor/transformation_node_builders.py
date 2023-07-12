@@ -139,9 +139,8 @@ class LogicalRelationNodeBuilder(TransformationNodeBuilder):
 
 class JoinNodeBuilder(TransformationNodeBuilder):
     def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
-        metadata["condition"] = node.condition().toString()
         metadata["join_type"] = node.joinType().toString()
-        metadata["condition2"] = self._extract_condition(node)
+        metadata["condition"] = self._extract_condition(node)
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Join
@@ -150,9 +149,11 @@ class JoinNodeBuilder(TransformationNodeBuilder):
         return 2
 
     def _extract_condition(self, node: JavaObject) -> Condition:
-        cx = node.condition().x()
-        reference_ids = [ref.exprId().id() for ref in iterate_java_object(cx.references())]
-        return Condition(cx.toString(), reference_ids, cx.treeString())
+        if node.condition().isEmpty():
+            return Condition("", [], "")
+        cond = node.condition().get()
+        reference_ids = [ref.exprId().id() for ref in iterate_java_object(cond.references())]
+        return Condition(cond.sql(), reference_ids, cond.treeString())
 
 
 class GenerateNodeBuilder(TransformationNodeBuilder):

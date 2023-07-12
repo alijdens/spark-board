@@ -70,6 +70,6 @@ class TransformationNode:
 
 @dataclasses.dataclass
 class Condition:
-    sql: str
+    sql_str: str
     column_ids: List[int]
     tree_string: str
