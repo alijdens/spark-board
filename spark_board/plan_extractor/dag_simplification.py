@@ -3,7 +3,7 @@ from .transformations_dag import Metadata, TransformationColumn, TransformationN
 from typing import Dict, List, Set, TypeVar
 
 
-class Heuristic(object):
+class DagSimplifier(object):
 
     def can_apply(self, dag: TransformationNode) -> bool:
         raise NotImplementedError("Abstract method")
@@ -12,7 +12,7 @@ class Heuristic(object):
         raise NotImplementedError("Abstract method")
 
 
-class MergeJoinAndProject(Heuristic):
+class MergeJoinAndProject(DagSimplifier):
 
     def __init__(self) -> None:
         self.already_merged_joins: Set[TransformationNode] = set()
@@ -83,9 +83,9 @@ all_heuristics = [
 ]
 
 
-def apply_heuristics(raw_dag: TransformationNode) -> TransformationNode:
+def simplify(raw_dag: TransformationNode) -> TransformationNode:
     # heuristics are applied with a "child-first" policy
-    raw_dag.children = [apply_heuristics(child) for child in raw_dag.children]
+    raw_dag.children = [simplify(child) for child in raw_dag.children]
 
     result_dag = raw_dag
     for heuristic in all_heuristics:

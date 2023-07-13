@@ -2,16 +2,16 @@ from py4j.java_gateway import JavaObject
 from pyspark.sql import DataFrame
 from typing import List, Dict, Any, Generator, Optional
 
-from .heuristics import apply_heuristics
+from .dag_simplification import simplify
 from .transformations_dag import TransformationNode
 from .transformation_node_builders import build_dag_from_java_object
 from .py4j_utils import iterate_java_object
 
 
-def build_dag(df: DataFrame, enable_heuristics: bool=True) -> TransformationNode:
+def build_dag(df: DataFrame, simplify_dag: bool=True) -> TransformationNode:
     first_child = _get_last_transformation(df)
     raw_dag = build_dag_from_java_object(node=first_child)
-    return apply_heuristics(raw_dag) if enable_heuristics else raw_dag
+    return simplify(raw_dag) if simplify_dag else raw_dag
 
 
 def _get_last_transformation(df: DataFrame) -> JavaObject:

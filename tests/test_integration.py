@@ -19,7 +19,6 @@ def test_spark_board(spark: SparkSession, tmp_path: Path) -> None:
         output_dir=str(OUT_DIR),
         overwrite=True,  # overwrite output_dir if it already exists
         default_settings=DefaultSettings(),  # override default settings if desired
-        enable_heuristics=True,
     )
 
     assert (OUT_DIR/"model.js").exists()
