@@ -10,7 +10,8 @@ and pass the `setNodes` and `setEdges` callbacks to it, along with the selected
 column state created before.
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { getNodeElem } from './utils'
 
 
 /**
@@ -140,9 +141,4 @@ function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking) {
         currentEdge.hidden = true;
     }
     return currentEdge;
-}
-
-function getNodeElem(node_id) {
-    // returns the DOM element that contains the node with the given ID
-    return document.querySelectorAll(`[data-id="${node_id}"]`)[0];
 }
