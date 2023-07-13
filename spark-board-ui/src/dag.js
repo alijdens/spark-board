@@ -2,6 +2,8 @@
  * Module that implements some DAG algorithms.
  */
 
+import { getNodeElem } from './utils'
+
 
 // margin between nodes in the horizontal coordinates
 const HORIZONTAL_MARGIN = 60;
@@ -122,16 +124,6 @@ export function buildAdjacencyList(edges, bidirectional = false) {
         }
     }
     return adjacencyList;
-}
-
-/**
- * Returns the element in the DOM that represents the node with the given ID.
- * @param {string} nodeId Id of the node to get the element.
- * @returns DOM element that represents the node.
- */
-function getNodeElem(nodeId) {
-    // returns the DOM element that contains the node with the given ID
-    return document.querySelectorAll(`[data-id="${nodeId}"]`)[0];
 }
 
 function hasChildren(node_id, adj_list) {
