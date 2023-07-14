@@ -13,6 +13,14 @@ class DagSimplifier(object):
 
 
 class MergeJoinAndProject(DagSimplifier):
+    """When the PySpark dataframe has a join, the resulting DAG has
+    two nodes: one is a Join, and the other is a Project. With this simplification
+    both nodes are merged.
+    When joining by column name, the node has one column representing the
+    column coming from the "left" df, and another for the "right" df. Our
+    resulting merged join node contains only one column that has links
+    to the two origin columns.
+    """
 
     def __init__(self) -> None:
         self.already_merged_joins: Set[TransformationNode] = set()
