@@ -44,7 +44,7 @@ class TransformationNodeBuilder(object):
 
     def _extract_column(self, java_column: JavaObject, children: List[TransformationNode]) -> TransformationColumn:
         if java_column.nodeName() not in ["Alias", "AttributeReference"]:
-            raise NotImplementedError(f"Project column type not supported: {java_column.nodeName()}")
+            raise NotImplementedError(f"Column type not supported: {java_column.nodeName()}")
 
         column_name = java_column.name()
         column_id = java_column.exprId().id()
@@ -177,6 +177,9 @@ class AggregateNodeBuilder(TransformationNodeBuilder):
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Aggregate
+
+    def _get_columns(self, java_node: JavaObject) -> JavaObject:
+        return java_node.aggregateExpressions()
 
     def _expected_number_of_nodes(self) -> Optional[int]:
         return 1
