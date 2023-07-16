@@ -56,11 +56,15 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
             return node;
         }).map((node) => {
             if (node.type == "transformation") {
-                return applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes);
+                return applyTransformationNodeEffectOnColumnTrackingChanged(
+                    node,
+                    visitedTransformationNodes,
+                    (selectedColumn !== null) && (selectedColumn !== undefined),
+                );
             }
             return node;
         });
-    }), [columnGraph]);
+    }), [selectedColumn, columnGraph]);
 
     // Effect over edges for the selected column graph
     useEffect(() => setEdges((eds) => eds.map((edge) => {
@@ -118,18 +122,45 @@ function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTrackin
     return currentNode;
 }
 
-function applyTransformationNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes) {
+/**
+ * Sets transformation node CSS style when the selected column for tracking
+ * changes for a particular node.
+ * 
+ * @param {object} node reac-flow node to be updated.
+ * @param {object} visitedTransformationNodes Map from node ID to times a node was visited.
+ * @param {bool} isColumnSelected Whether there is a column selected for tracking or not.
+ * @returns Updated node.
+ */
+function applyTransformationNodeEffectOnColumnTrackingChanged(
+    node,
+    visitedTransformationNodes,
+    isColumnSelected,
+) {
     let DOMNode = getNodeElem(node.id);
     let nodeHeight = DOMNode.scrollHeight;
 
+    let newStyle = {
+        // set transition to make the opacity change smooth when selecting columns
+        transition: "opacity 0.3s",
+    };
     if (node.id in visitedTransformationNodes) {
         let h = max(nodeHeight, 90 + visitedTransformationNodes[node.id] * 15);
         node.height = h;
-        node.style = { ...node.style, height: h };
+        newStyle.height = h;
+        newStyle.opacity = "100%";
     } else {
         node.height = nodeHeight;
-        node.style = { ...node.style, height: node.height };
+        newStyle.height = node.height;
+        if (isColumnSelected) {
+            // at this point there is a specific column selected to show the tracking
+            // but this node is not part of it, so we make it more transparent to
+            // highlight the nodes that actually are
+            newStyle.opacity = "30%";
+        } else {
+            newStyle.opacity = "100%";
+        }
     }
+    node.style = { ...node.style, ...newStyle };
     return node;
 }
 

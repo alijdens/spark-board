@@ -150,7 +150,7 @@ function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColum
  * Monospaced text with horizontal scrollbar.
  */
 function Mono({ children }) {
-    return <div class="monospaced">{ children }</div>
+    return <div className="monospaced">{ children }</div>
 }
 
 /**
