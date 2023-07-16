@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useCollapse } from 'react-collapsed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleChevronUp, faCircleChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -10,7 +11,7 @@ import "./sidebar.css";
 
 function Section(props) {
     const config = {
-        defaultExpanded: props.defaultExpanded || false,
+        defaultExpanded: props.defaultExpanded || true,
         collapsedHeight: props.collapsedHeight || 0
     };
     const { getCollapseProps, getToggleProps, isExpanded } = useCollapse(config);
@@ -30,60 +31,73 @@ function Section(props) {
     );
 }
 
-function transformationData(transformationNode) {
-    switch (transformationNode.data.type) {
+function TransformationDataSection({ node }) {
+    let metadata = node.data.metadata;
+
+    switch (node.data.type) {
         case "Join":
-            return (<div>
-                    Condition: { transformationNode.data.metadata.condition }
-                    <p/>
-                    Join Type: { transformationNode.data.metadata.join_type }
-                </div>)
+            return <>
+                <Section title="Join Condition">
+                    <Mono>{ metadata.condition }</Mono>
+                </Section>
+                <Section title="Join Type">
+                    { metadata.join_type }
+                </Section>
+            </>
         case "Filter":
-            return (<div>
-                    Condition: { transformationNode.data.metadata.condition }
-                </div>)
+            return <Section title="Condition">
+                <Mono>{ metadata.condition }</Mono>
+            </Section>
+
+        case "DataSource":
+            return <ObjectSections object={ metadata }></ObjectSections>
 
         case "Project":
-            return (<div className="multiline" >
-                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
-                </div>)
-        case "DataSource":
-            return (<div className="multiline">
-                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
-                </div>)
         case "Window":
-            return (<div className="multiline">
-                    Schema String:<p/>{ transformationNode.data.metadata.schema_string }
-                </div>)            
+            return <Section title="Schema String">
+                <Mono>{ metadata.schema_string }</Mono>
+            </Section>
 
         case "Transform":
-            return (<div>
-                    Generator: { transformationNode.data.metadata.generator }
-                </div>)
+            return <Section title="Generator">
+                <Mono>{ metadata.generator }</Mono>
+            </Section>
 
         case "Group":
-            return (<div>
-                    Aggregate Expressions: <ul>{
-                        transformationNode.data.metadata.aggregate_expressions.map((exp) => (
-                            <li>{ exp }</li>
+            return <>
+                <Section title="Aggregate Expressions">
+                    <ul>{
+                        metadata.aggregate_expressions.map((exp) => (
+                            <li><Mono>{ exp }</Mono></li>
                         ))
                     }</ul>
-                    Grouping Expressions: <ul>{
-                        transformationNode.data.metadata.grouping_expressions.map((exp) => (
-                            <li>{ exp }</li>
+                </Section>
+                <Section title="Expressions">
+                    <ul>{
+                        metadata.grouping_expressions.map((exp) => (
+                            <li><Mono>{ exp }</Mono></li>
                         ))
                     }</ul>
-                </div>)
+                </Section>
+            </>
 
         case "Sort":
-            return (<div>
-                Order Criteria: <ul>{
-                        transformationNode.data.order.map((criteria) => (
-                            <li>{ criteria }</li>
-                        ))
-                    }</ul>
-                </div>)
+            return <Section title="Order Criteria">
+                <ul>{
+                    metadata.order.map((criteria) => (
+                        <li><Mono>{ criteria }</Mono></li>
+                    ))
+                }</ul>
+            </Section>
 
+        case "Limit":
+            return <Section title="Limit"><Mono>{ metadata.limit_expr }</Mono></Section>
+
+        case "Alias":
+            return <Section title="Name"><Mono>{ metadata.alias }</Mono></Section>
+
+        default:
+            return <ObjectSections object={ metadata }></ObjectSections>
     }
 }
 
@@ -122,9 +136,7 @@ function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColum
                 )}
                 <br/><br/>
             </Section>
-            <Section title="Transformation data">
-                { transformationData(node) }
-            </Section>
+            <TransformationDataSection node={node}></TransformationDataSection>
             <Section title="Column Tree" hidden={node == null || selectedColumn == null} defaultExpanded>
                 <div className="multiline" style={{fontFamily: "monospace"}}>
                     {selectedColumn != null ? selectedColumn.data.tree_string : "This text shouldn't be shown!"}
@@ -133,5 +145,29 @@ function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColum
        </div>
     )
 }
+
+/**
+ * Monospaced text with horizontal scrollbar.
+ */
+function Mono({ children }) {
+    return <div class="monospaced">{ children }</div>
+}
+
+/**
+ * Shows each key/value pair in the object as a <Section> with the key as
+ * title and the value as <Mono>
+ */
+function ObjectSections({ object }) {
+    const asTitle = useCallback((str) => {
+        let capitalized = str[0].toUpperCase() + str.slice(1).toLowerCase();
+        return capitalized.replace("_", " ");
+    })
+    return <>{
+        Object.keys(object).map((key) => {
+            return <Section title={asTitle(key)}><Mono>{object[key]}</Mono></Section>
+        })
+    }</>
+}
+
 
 export default SideBar;
