@@ -71,7 +71,7 @@ class TransformationNode:
 @dataclasses.dataclass
 class JoinCondition:
     # SQL string representation of the condition.
-    sql_string: str
+    sql_str: str
     # IDs of the columns referenced by the condition.
     column_ids: List[int]
     # Tree string representation of the condition.
