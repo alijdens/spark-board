@@ -1,7 +1,7 @@
 from py4j.java_gateway import JavaObject
-from typing import List, Dict, Any, Generator, Optional
+from typing import List, Dict, Any, Generator, Optional, Tuple
 
-from .transformations_dag import Condition, Metadata, TransformationColumn, TransformationNode, TransformationType
+from .transformations_dag import JoinCondition, Metadata, TransformationColumn, TransformationNode, TransformationType
 from .py4j_utils import iterate_java_object
 
 
@@ -148,12 +148,34 @@ class JoinNodeBuilder(TransformationNodeBuilder):
     def _expected_number_of_nodes(self) -> Optional[int]:
         return 2
 
-    def _extract_condition(self, node: JavaObject) -> Condition:
+    def _extract_condition(self, node: JavaObject) -> JoinCondition:
         if node.condition().isEmpty():
-            return Condition("", [], "")
+            return JoinCondition("", [], "", False, [])
         cond = node.condition().get()
+        is_equi_join, equi_join_columns = self._is_equi_join(cond)
         reference_ids = [ref.exprId().id() for ref in iterate_java_object(cond.references())]
-        return Condition(cond.sql(), reference_ids, cond.treeString())
+        return JoinCondition(cond.sql(), reference_ids, cond.treeString(), is_equi_join, equi_join_columns)
+
+    def _is_equi_join(self, cond: JavaObject) -> Tuple[bool, List[str]]:
+        node_name = cond.nodeName()
+        if node_name == "EqualTo":
+            col_names = [col.name() for col in iterate_java_object(cond.children())]
+            if len(col_names) == 2 and col_names[0] == col_names[1]:
+                return True, [col_names[0]]
+            else:
+                return False, []
+
+        if node_name == "And":
+            equi_join_columns = []
+            for child in iterate_java_object(cond.children()):
+                child_is_equi, child_cols = self._is_equi_join(child)
+                if child_is_equi:
+                    equi_join_columns += child_cols
+                else:
+                    return False, []
+            return True, equi_join_columns
+
+        return False, []
 
 
 class GenerateNodeBuilder(TransformationNodeBuilder):

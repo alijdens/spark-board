@@ -6,7 +6,7 @@ import dataclasses
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
-from .plan_extractor.transformations_dag import Condition, TransformationColumn, TransformationNode, TransformationType
+from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
 
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple
@@ -24,7 +24,7 @@ const model_initialEdges = {links};
 
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
-        if type(o) is Condition:
+        if type(o) is JoinCondition:
             return dataclasses.asdict(o)
         return json.JSONEncoder.default(self, o)    
 

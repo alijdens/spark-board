@@ -69,7 +69,21 @@ class TransformationNode:
 
 
 @dataclasses.dataclass
-class Condition:
-    sql_str: str
+class JoinCondition:
+    # SQL string representation of the condition.
+    sql_string: str
+    # IDs of the columns referenced by the condition.
     column_ids: List[int]
+    # Tree string representation of the condition.
     tree_string: str
+    # The join condition is an equality of two columns with the same
+    # name, or a conjunction of such equalities.
+    # For example: 
+    # - a = a -> True
+    # - a > a -> False
+    # - a = a AND b = b -> True
+    # - a1 = a2 AND b1 = b2 -> False
+    is_equi_join: bool
+    # If is_equi_join is True, this list has the names of the columns
+    # used in the equi join condition. Otherwise, this is an empty list
+    equi_join_columns: List[str]

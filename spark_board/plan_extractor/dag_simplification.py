@@ -1,4 +1,4 @@
-from .transformations_dag import Metadata, TransformationColumn, TransformationNode, TransformationType, Condition
+from .transformations_dag import Metadata, TransformationColumn, TransformationNode, TransformationType, JoinCondition
 
 from typing import Dict, List, Set, TypeVar
 
@@ -36,17 +36,24 @@ class MergeJoinAndProject(DagSimplifier):
     def can_apply(self, dag: TransformationNode) -> bool:
         if dag.type != TransformationType.Project:
             return False
-        if len(dag.children) != 1:
+        project_node = dag
+        if len(project_node.children) != 1:
             return False
-        if dag.children[0].type != TransformationType.Join:
+        join_node = project_node.children[0]
+        if join_node.type != TransformationType.Join:
             return False
-        if dag.children[0].metadata["join_type"] == "Cross":
+        if join_node.metadata["join_type"] == "Cross":
             # Cross Join doesn't add the extra Project, so removing it would be wrong
             return False
-        if dag.children[0] in self.already_merged_joins:
+        if join_node in self.already_merged_joins:
             # Avoid collapsing all subsequent Projects
             return False
-        return True
+        condition = join_node.metadata["condition"]
+        if not condition.is_equi_join:
+            return False
+        project_column_names = [c.name for c in project_node.columns.values()]
+        join_column_names = [c.name for c in join_node.columns.values()]
+        return sorted(project_column_names + condition.equi_join_columns) == sorted(join_column_names)
 
     def apply(self, original: TransformationNode) -> TransformationNode:
         project_node = original
@@ -69,7 +76,7 @@ class MergeJoinAndProject(DagSimplifier):
             "schema_string": proj_meta["schema_string"],
         }
 
-    def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn], cond: Condition) -> Dict[int, TransformationColumn]:
+    def _merge_columns(self, pcols: Dict[int, TransformationColumn], jcols: Dict[int, TransformationColumn], cond: JoinCondition) -> Dict[int, TransformationColumn]:
         for col in pcols.values():
             assert len(col.links) == 1
             link = col.links[0]

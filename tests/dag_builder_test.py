@@ -156,9 +156,9 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
     def test_data_source(self) -> None:
         # convert into table
-        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("test_table")
+        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
         
-        df = spark.table("test_table")
+        df = spark.table("table")
         dag = build_dag(df)
 
         # TODO: it seems that tables generate 2 nodes: an "Alias" and the "DataSource"
@@ -171,7 +171,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         assert table.type == TransformationType.Relation
         assert table.children == []
-        assert table.metadata["table"] == "test_table"
+        assert table.metadata["table"] == "table"
 
     def test_join_simple(self) -> None:
         ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
@@ -261,7 +261,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
     def test_join_arbitrary_condition(self) -> None:
         ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
         ac = spark.createDataFrame([], schema="struct<a: double, c: double>")
-        df = ab.join(ac, on=[ab.a >= ac.a])
+        df = ab.join(ac, on=[ab.a == ac.a])
 
         dag = build_dag(df)
         schema = ("root\n"
@@ -271,7 +271,26 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- c: double (nullable = true)\n")
         self._expect_join(node=dag,
                           expected_schema=schema,
-                          expected_condition='(a >= a)',
+                          expected_condition='(a = a)',
+                          expected_join_type='Inner')
+
+    def test_join_arbitrary_condition_and_select(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        ac = spark.createDataFrame([], schema="struct<a: double, c: double>")
+        df = ab.join(ac, on=[ab.a == ac.a])
+        df = df.select("*")
+
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "a", "c"])
+        dag = dag.children[0]
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(a = a)',
                           expected_join_type='Inner')
 
     def test_window(self) -> None:
