@@ -72,8 +72,6 @@ class TransformationNode:
 class JoinCondition:
     # SQL string representation of the condition.
     sql_str: str
-    # IDs of the columns referenced by the condition.
-    column_ids: List[int]
     # Tree string representation of the condition.
     tree_string: str
     # The join condition is an equality of two columns with the same
@@ -84,6 +82,7 @@ class JoinCondition:
     # - a = a AND b = b -> True
     # - a1 = a2 AND b1 = b2 -> False
     is_equi_join: bool
-    # If is_equi_join is True, this list has the names of the columns
-    # used in the equi join condition. Otherwise, this is an empty list
-    equi_join_columns: List[str]
+    # If is_equi_join is True, this dictionary contains a mapping from 
+    # the names of the columns (used in the equi join condition), to the
+    # column ids. Otherwise, this is an empty dictionary
+    equi_join_columns: Dict[str, List[int]]

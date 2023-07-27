@@ -53,7 +53,8 @@ class MergeJoinAndProject(DagSimplifier):
             return False
         project_column_names = [c.name for c in project_node.columns.values()]
         join_column_names = [c.name for c in join_node.columns.values()]
-        return sorted(project_column_names + condition.equi_join_columns) == sorted(join_column_names)
+        collapsed_col_names = [n for n in condition.equi_join_columns.keys()]
+        return sorted(project_column_names + collapsed_col_names) == sorted(join_column_names)
 
     def apply(self, original: TransformationNode) -> TransformationNode:
         project_node = original
@@ -83,8 +84,8 @@ class MergeJoinAndProject(DagSimplifier):
 
             links = []
             tree_string = ""
-            if link.id in cond.column_ids:
-                links = flatten([jcols[i].links for i in cond.column_ids])
+            if link.name in cond.equi_join_columns.keys():
+                links = flatten([jcols[i].links for i in cond.equi_join_columns[link.name]])
                 tree_string = cond.tree_string
             else:
                 links = jcols[link.id].links
