@@ -36,6 +36,7 @@ export function Settings({ settings, setSetting }) {
     // callbacks that bind the settings to the switchs
     const setAnimation = useCallback((value) => setSetting("animationEnabled", value), [settings]);
     const setAnimationOnDrag = useCallback((value) => setSetting("animationEnabledOnDrag", value), [settings]);
+    const setDataSourceDuplication = useCallback((value) => setSetting("duplicateDataSources", value), [settings]);
 
     // add some background to the settings pannel
     const style = {
@@ -49,6 +50,7 @@ export function Settings({ settings, setSetting }) {
         <div hidden={!expanded}>
             <ToggleSwitch label="Node animation" value={settings.animationEnabled} onChange={setAnimation} />
             <ToggleSwitch label="Node animation on drag" value={settings.animationEnabledOnDrag} onChange={setAnimationOnDrag} />
+            <ToggleSwitch label="Duplicate Data Sources" value={settings.duplicateDataSources} onChange={setDataSourceDuplication} />
         </div>
     </div>
 }

@@ -16,3 +16,7 @@ class DefaultSettings:
 
     # nodes are animated (pull linked nodes) when dragged with the mouse on the screen
     animationEnabledOnDrag: bool = True
+
+    # Data source nodes will appear multiple times on each used transformation that
+    # accesses it.
+    duplicateDataSources: bool = True

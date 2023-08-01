@@ -10,7 +10,8 @@
 
 const model_defaultSettings = {
     "animationEnabled": true,
-    "animationEnabledOnDrag": true
+    "animationEnabledOnDrag": true,
+    "duplicateDataSources": true
 };
 
 const model_initialNodes = [

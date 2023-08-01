@@ -10,8 +10,7 @@ and pass the `setNodes` and `setEdges` callbacks to it, along with the selected
 column state created before.
  */
 
-import React, { useEffect } from 'react';
-import { getNodeElem } from './utils'
+import React from 'react';
 
 
 /**
@@ -37,46 +36,43 @@ export function useColumnGraphState(initialColumn) {
  * @param {node} selectedColumn Column to show the graph for (or null).
  * @param {Map} nodesById a dictionary of all nodes by id-
  */
-function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById) {
-    // the column graph will contain the column node IDs that are related to the selected column
-    const [columnGraph, setColumnGraph] = React.useState([]);
+function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized) {
+    const isColumnSelected = (selectedColumn !== null) && (selectedColumn !== undefined);
 
     // find the selected column graph
-    useEffect(() =>
-        setColumnGraph(buildColumnGraph(nodesById, selectedColumn))
-    , [selectedColumn]);
+    const columnGraph = buildColumnGraph(nodesById, selectedColumn);
 
-    // Effect over column nodes when a column is selected to show its graph
-    useEffect(() => setNodes((nds) => {
-        let visitedTransformationNodes = {};
-        return nds.map((node) => {
-            if (node.type == "column") {
-                return applyColumnNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes);
-            }
-            return node;
-        }).map((node) => {
-            if (node.type == "transformation") {
-                return applyTransformationNodeEffectOnColumnTrackingChanged(
-                    node,
-                    visitedTransformationNodes,
-                    (selectedColumn !== null) && (selectedColumn !== undefined),
-                );
-            }
-            return node;
+    if (nodesInitialized) {
+        // visual effect over column nodes when a column is selected to show its graph
+        setNodes((nds) => {
+            let visitedTransformationNodes = {};
+            return nds.map((node) => {
+                if (node.type == "column") {
+                    return applyColumnNodeEffectOnColumnTrackingChanged(node, columnGraph, visitedTransformationNodes);
+                }
+                return node;
+            }).map((node) => {
+                if (node.type == "transformation") {
+                    return applyTransformationNodeEffectOnColumnTrackingChanged(
+                        node,
+                        visitedTransformationNodes,
+                        isColumnSelected,
+                    );
+                }
+                return node;
+            });
         });
-    }), [selectedColumn, columnGraph]);
+    }
 
-    // Effect over edges for the selected column graph
-    useEffect(() => setEdges((eds) => eds.map((edge) => {
+    // visual effect over edges for the selected column graph
+    setEdges((eds) => eds.map((edge) => {
         // TODO: Taking advantage of this flag, which is not semantically correct. Add an edge type
         // instead
         if (edge.animated) {
-            return applyEdgesEffectOnColumnTrackingChanged(edge, columnGraph);
+            return applyEdgesEffectOnColumnTrackingChanged(edge, columnGraph, isColumnSelected);
         }
         return edge;
-    })), [columnGraph]);
-
-    return columnGraph;
+    }));
 }
 
 function max(a, b) {
@@ -97,7 +93,7 @@ export default drawColumnGraph;
  * @returns 
  */
 function buildColumnGraph(nodesById, column) {
-    if (column === null) {
+    if (!column) {
         return [];
     }
     return [column.id].concat(column.data.linked_columns.map((linkedId) =>
@@ -136,21 +132,13 @@ function applyTransformationNodeEffectOnColumnTrackingChanged(
     visitedTransformationNodes,
     isColumnSelected,
 ) {
-    let DOMNode = getNodeElem(node.id);
-    let nodeHeight = DOMNode.scrollHeight;
-
     let newStyle = {
         // set transition to make the opacity change smooth when selecting columns
         transition: "opacity 0.3s",
     };
     if (node.id in visitedTransformationNodes) {
-        let h = max(nodeHeight, 90 + visitedTransformationNodes[node.id] * 15);
-        node.height = h;
-        newStyle.height = h;
         newStyle.opacity = "100%";
     } else {
-        node.height = nodeHeight;
-        newStyle.height = node.height;
         if (isColumnSelected) {
             // at this point there is a specific column selected to show the tracking
             // but this node is not part of it, so we make it more transparent to
@@ -164,8 +152,8 @@ function applyTransformationNodeEffectOnColumnTrackingChanged(
     return node;
 }
 
-function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking) {
-    if (columnTracking.includes(currentEdge.source) && columnTracking.includes(currentEdge.target)) {
+function applyEdgesEffectOnColumnTrackingChanged(currentEdge, columnTracking, isColumnSelected) {
+    if (isColumnSelected && columnTracking.includes(currentEdge.source) && columnTracking.includes(currentEdge.target)) {
         currentEdge.hidden = false;
         currentEdge.zIndex = 1;
     } else {
