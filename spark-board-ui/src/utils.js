@@ -11,3 +11,14 @@ export function getNodeElem(nodeId) {
     }
     return elem;
 }
+
+
+export function max(...nums) {
+    let m = nums[0];
+    for (let n of nums) {
+        if (n > m) {
+            m = n;
+        }
+    }
+    return m;
+}

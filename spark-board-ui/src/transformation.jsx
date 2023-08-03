@@ -2,7 +2,9 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { Handle, Position, useStore } from 'reactflow';
+import { useLayoutEffect, useState, useRef } from "react";
+import { Handle, Position, useStore, getRectOfNodes, useNodes } from 'reactflow';
+import { max } from './utils';
 
 import AddColumnIcon from './assets/addColumn.svg';
 import AliasIcon from './assets/alias.svg';
@@ -23,7 +25,23 @@ import UploadIcon from './assets/upload.svg';
 import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
+const PADDING = 10;
+
+
 function TransformationNode({ id, data }) {
+    // we use this to calculate this component's size
+    // https://stackoverflow.com/questions/49058890/how-to-get-a-react-components-size-height-width-before-render
+    const [dimensions, setDimensions] = useState({ width:0, height: 0 });
+    const targetRef = useRef();
+    useLayoutEffect(() => {
+        if (targetRef.current) {
+          setDimensions({
+            width: targetRef.current.scrollWidth,
+            height: targetRef.current.scrollHeight
+          });
+        }
+      }, []);
+
     // This resizes the NodeWrapper when the div is resized
     const size = useStore((s) => {
         const node = s.nodeInternals.get(id);
@@ -33,12 +51,21 @@ function TransformationNode({ id, data }) {
         };
     });
 
+    // column nodes associated to this node
+    const columns = useNodes().filter(node => 
+        (node.type == "column") && (node.parentNode == id) && !node.hidden
+    );
+
+    // bounding box that contains all of the columns
+    const bb = getRectOfNodes(columns);
+
     const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
+        padding: `${PADDING}px`,
         backgroundColor: color,
-        height: size.height,
-        width: size.width,
+        height: max(dimensions.height, bb.height + PADDING * 2),
+        width: max(dimensions.width, bb.width + PADDING * 2),
     }
 
     let classes = ["transformation-node__container"];
@@ -47,15 +74,13 @@ function TransformationNode({ id, data }) {
     }
 
     return (
-        <>
-            <div className={ classes.join(" ") } style={ nodeStyle }>
-                <Handle type="target" position={Position.Left} id="target" />
-                <p>{ data.label }</p>
-                <img src={ icon } width="50" height="50" />
-                <Summary transformation_type={data.type} metadata={data.metadata} />
-                <Handle type="source" position={Position.Right} id="source" />
-            </div>
-        </>
+        <div ref={targetRef} className={ classes.join(" ") } style={ nodeStyle }>
+            <Handle type="target" position={Position.Left} id="target" />
+            <p>{ data.label }</p>
+            <img src={ icon } width="50" height="50" />
+            <Summary transformation_type={data.type} metadata={data.metadata} />
+            <Handle type="source" position={Position.Right} id="source" />
+        </div>
     );
 }
 

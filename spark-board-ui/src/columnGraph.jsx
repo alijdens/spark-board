@@ -75,11 +75,6 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesIni
     }));
 }
 
-function max(a, b) {
-    return a > b ? a : b;
-}
-
-
 export default drawColumnGraph;
 
 
