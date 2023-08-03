@@ -1,7 +1,8 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, MiniMap, Panel, useNodesInitialized, useReactFlow } from 'reactflow';
 
-import TransformationNode, { getTransformationStyle } from './transformation';
+import { shallow } from 'zustand/shallow';
+import TransformationNode, { getTransformationStyle, nodeSelectionStore } from './transformation';
 import ColumnNode from './column';
 import SideBar from './sidebar';
 import drawColumnGraph, { useColumnGraphState } from './columnGraph';
@@ -25,10 +26,13 @@ export default function App() {
 
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
     // want to have multiple "selected nodes"
-    const [selectedTransformation, setSelectedTransformation] = React.useState(null);
+    const { selectedTransformation, setSelectedTransformation } = nodeSelectionStore((state) => ({
+        selectedTransformation: state.selectedTransformation,
+        setSelectedTransformation: state.setSelectedTransformation,
+    }), shallow);
 
     const [settings, setSetting] = useSettings(model_defaultSettings);
-    const [modelNodes, modelEdges] = useSparkDag(settings, selectedTransformation);
+    const [modelNodes, modelEdges] = useSparkDag(settings);
 
     const [nodes, setNodes, onNodesChange] = useNodesState(modelNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(modelEdges);
@@ -128,7 +132,7 @@ export default function App() {
             setSelectedTransformation(node);
             setSelectedColumn(null);
         }
-    }, []);
+    }, [setSelectedTransformation]);
 
     const onNodeDragStart = useCallback((event, node) => {
         // fix node to the position where the user drops the node
@@ -143,7 +147,8 @@ export default function App() {
 
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
-            <SideBar width="400px" 
+            <SideBar
+                width="400px" 
                 node={selectedTransformation} 
                 nodesById={nodesById}
                 onSelectedColumnChange={setSelectedColumn} 

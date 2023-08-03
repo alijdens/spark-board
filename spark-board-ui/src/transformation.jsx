@@ -5,6 +5,7 @@
 import { useLayoutEffect, useState, useRef } from "react";
 import { Handle, Position, useStore, getRectOfNodes, useNodes } from 'reactflow';
 import { max } from './utils';
+import { create } from 'zustand';
 
 import AddColumnIcon from './assets/addColumn.svg';
 import AliasIcon from './assets/alias.svg';
@@ -26,6 +27,25 @@ import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
 const PADDING = 10;
+
+
+/**
+ * This state stores which transformation node is selected for the sidebar.
+ * It allows querying to check if a node is selected and updating the selected
+ * node.
+ */
+export const nodeSelectionStore = create((set, get) => ({
+    selectedTransformation: null,
+
+    setSelectedTransformation: (node) => {
+        set({selectedTransformation: node});
+    },
+    
+    isSelected: (nodeId) => {
+        return (get().selectedTransformation !== null) && (get().selectedTransformation.id == nodeId)
+    },
+}));
+
 
 
 function TransformationNode({ id, data }) {
@@ -69,7 +89,7 @@ function TransformationNode({ id, data }) {
     }
 
     let classes = ["transformation-node__container"];
-    if (data.selected()) {
+    if (nodeSelectionStore(state => state.isSelected(id))) {
         classes.push("transformation-node-selected");
     }
 
