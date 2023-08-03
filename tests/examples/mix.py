@@ -42,10 +42,14 @@ top_continent = continent_population.orderBy(F.desc("continent_population")).lim
 top_countries = country_population.orderBy(F.desc("country_population")).limit(10)
 top_cities = city_population.orderBy(F.desc("city_population")).limit(10)
 
+plus = spark.createDataFrame([], schema="struct<a:double, b:double, c:double, d:double>")
+plus = plus.withColumn("sum", (plus.a + plus.b) / plus.c + plus.d)
+
 df = (
     df1.join(top_cities, on=["city"], how="left")
     .join(top_countries, on=["country"], how="left")
     .join(top_continent, on=["continent"], how="left")
+    .join(plus, on=(plus.a == top_cities.city))
     .withColumn("is_top_city", F.coalesce("city_population", F.lit(0)) > 0)
     .withColumn("is_top_country", F.coalesce("country_population", F.lit(0)) > 0)
     .withColumn("is_top_continent", F.coalesce("continent_population", F.lit(0)) > 0)

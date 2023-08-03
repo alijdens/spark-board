@@ -3,7 +3,7 @@
  */
 
 import { useLayoutEffect, useState, useRef } from "react";
-import { Handle, Position, useStore, getRectOfNodes, useNodes } from 'reactflow';
+import { Handle, Position, getRectOfNodes, useNodes } from 'reactflow';
 import { max } from './utils';
 import { create } from 'zustand';
 
@@ -60,16 +60,7 @@ function TransformationNode({ id, data }) {
             height: targetRef.current.scrollHeight
           });
         }
-      }, []);
-
-    // This resizes the NodeWrapper when the div is resized
-    const size = useStore((s) => {
-        const node = s.nodeInternals.get(id);
-        return {
-            height: node.height,
-            width: node.width,
-        };
-    });
+    }, []);
 
     // column nodes associated to this node
     const columns = useNodes().filter(node => 
