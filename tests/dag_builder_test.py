@@ -123,24 +123,10 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- lat: float (nullable = true)\n"
                   " |-- lon: float (nullable = true)\n")
 
-        project = project.children[0]
-        self._expect_project(node=project, expected_schema=schema, expected_column_names=['city', 'dni', 'name', 'age', 'weight', 'zip_code', 'lat', 'lon'])
-
-        schema = ("root\n"
-                  " |-- dni: integer (nullable = true)\n"
-                  " |-- name: string (nullable = true)\n"
-                  " |-- age: integer (nullable = true)\n"
-                  " |-- weight: float (nullable = true)\n"
-                  " |-- city: string (nullable = true)\n"
-                  " |-- city: string (nullable = true)\n"
-                  " |-- zip_code: string (nullable = true)\n"
-                  " |-- lat: float (nullable = true)\n"
-                  " |-- lon: float (nullable = true)\n")
-
         inner_join = project.children[0]
         self._expect_join(node=inner_join,
                           expected_schema=schema,
-                          expected_condition='Some((city#246 = city#252))',  # TODO: don't use hardcoded IDs
+                          expected_condition='(city = city)',
                           expected_join_type='Inner')
 
         schema = ("root\n"
@@ -170,9 +156,9 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
     def test_data_source(self) -> None:
         # convert into table
-        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("test_table")
+        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
         
-        df = spark.table("test_table")
+        df = spark.table("table")
         dag = build_dag(df)
 
         # TODO: it seems that tables generate 2 nodes: an "Alias" and the "DataSource"
@@ -185,7 +171,127 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         assert table.type == TransformationType.Relation
         assert table.children == []
-        assert table.metadata["table"] == "test_table"
+        assert table.metadata["table"] == "table"
+
+    def test_join_simple(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        bc = spark.createDataFrame([], schema="struct<b: double, c: double>")
+        df = ab.join(bc, on=["b"])
+
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(b = b)',
+                          expected_join_type='Inner')
+
+    def test_multi_join_different_columns(self) -> None:
+        abc = spark.createDataFrame([], schema="struct<a: double, b: double, c: double>")
+        bcd = spark.createDataFrame([], schema="struct<b: double, c: double, d: double>")
+        df = abc.join(bcd, on=["b", "c"]).join(bcd, on=["b"]).join(abc, on=["c"])
+
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(c = c)',
+                          expected_join_type='Inner')
+
+        dag = dag.children[0]
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(b = b)',
+                          expected_join_type='Inner')
+        dag = dag.children[0]
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='((b = b) AND (c = c))',
+                          expected_join_type='Inner')
+
+    def test_multi_join_same_column(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        ac = spark.createDataFrame([], schema="struct<a: double, c: double>")
+        ad = spark.createDataFrame([], schema="struct<a: double, d: double>")
+        df = ab.join(ac, on=["a"]).join(ad, on=["a"])
+
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n"
+                  " |-- d: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(a = a)',
+                          expected_join_type='Inner')
+        dag = dag.children[0]
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(a = a)',
+                          expected_join_type='Inner')
+
+    def test_join_arbitrary_condition(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        ac = spark.createDataFrame([], schema="struct<a: double, c: double>")
+        df = ab.join(ac, on=[ab.a == ac.a])
+
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(a = a)',
+                          expected_join_type='Inner')
+
+    def test_join_arbitrary_condition_and_select(self) -> None:
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        ac = spark.createDataFrame([], schema="struct<a: double, c: double>")
+        df = ab.join(ac, on=[ab.a == ac.a])
+        df = df.select("*")
+
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "a", "c"])
+        dag = dag.children[0]
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(a = a)',
+                          expected_join_type='Inner')
 
     def test_window(self) -> None:
         df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
@@ -317,17 +423,23 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
     def test_cross_join(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double>")
         df2 = spark.createDataFrame([], schema="struct<b:double, c:double>")
-        df = df1.crossJoin(df2.select("b"))
+        df = df1.crossJoin(df2)
+        df = df.select("*")
 
         dag = build_dag(df)
 
         schema = ("root\n"
                   " |-- a: double (nullable = true)\n"
                   " |-- b: double (nullable = true)\n"
-                  " |-- b: double (nullable = true)\n")
+                  " |-- b: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+
+        self._expect_project(node=dag, expected_schema=schema, expected_column_names=["a", "b", "b", "c"])
+
+        dag = dag.children[0]
         self._expect_join(node=dag,
                           expected_schema=schema,
-                          expected_condition='None',
+                          expected_condition='',
                           expected_join_type='Cross')
 
     def test_describe(self) -> None:
@@ -802,7 +914,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
     def _expect_join(self, node: TransformationNode, expected_schema: str, expected_condition: str, expected_join_type: str) -> None:
         assert node.type == TransformationType.Join, f'Expected Join node but "{node.type}" found'
 
-        assert node.metadata['condition'] == expected_condition
+        assert node.metadata['condition'].sql_str == expected_condition
         assert node.metadata['join_type'] == expected_join_type
         assert node.metadata['schema_string'] == expected_schema
 

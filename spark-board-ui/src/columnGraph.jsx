@@ -97,12 +97,22 @@ export default drawColumnGraph;
  * @returns 
  */
 function buildColumnGraph(nodesById, column) {
-    if (column === null) {
+    if (column === null || column === undefined) {
         return [];
     }
-    return [column.id].concat(column.data.linked_columns.map((linkedId) =>
-        buildColumnGraph(nodesById, nodesById.get(linkedId))
-    )).flat();
+    let columnIds = [column.id];
+    let links = Array.from(column.data.linked_columns);
+    while (links.length > 0) {
+        let currentColumnId = links.pop();
+        let node = nodesById.get(currentColumnId);
+        if (node == null) {
+            console.log("WARN: Node not found: " + currentColumnId);
+            continue;
+        }
+        links.push(...node.data.linked_columns);
+        columnIds.push(currentColumnId);
+    }
+    return columnIds;
 }
 
 function applyColumnNodeEffectOnColumnTrackingChanged(currentNode, columnTracking, visitedTransformationNodes) {

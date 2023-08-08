@@ -38,7 +38,7 @@ function TransformationDataSection({ node }) {
         case "Join":
             return <>
                 <Section title="Join Condition">
-                    <Mono>{ metadata.condition }</Mono>
+                    <Mono>{ metadata.condition.sql_str }</Mono>
                 </Section>
                 <Section title="Join Type">
                     { metadata.join_type }
