@@ -2,8 +2,8 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { useLayoutEffect, useState, useRef } from "react";
-import { Handle, Position, getRectOfNodes, useNodes } from 'reactflow';
+import { useLayoutEffect, useRef, useMemo } from "react";
+import { Handle, Position, getRectOfNodes } from 'reactflow';
 import { max } from './utils';
 import { create } from 'zustand';
 
@@ -30,67 +30,125 @@ const PADDING = 10;
 
 
 /**
- * This state stores which transformation node is selected for the sidebar.
- * It allows querying to check if a node is selected and updating the selected
- * node.
+ * This state stores transformation node properties that we want to expose to the main app.
  */
-export const nodeSelectionStore = create((set, get) => ({
+export const useTransformationNodeStore = create((set, get) => ({
+    // seletected transformation node (used to render the sidebar)
     selectedTransformation: null,
+    // map from node Id to dimensions (width and height)
+    dimensions: {},
+    refs: new Map(),
 
+    // sets the given node as the selected one
     setSelectedTransformation: (node) => {
-        set({selectedTransformation: node});
+        const state = get();
+        set({ ...state, selectedTransformation: node });
     },
-    
+
+    // returns whtether the given `nodeId` corresponds to the selected node
     isSelected: (nodeId) => {
         return (get().selectedTransformation !== null) && (get().selectedTransformation.id == nodeId)
     },
+
+    setDimensions: (nodeId, dims) => {
+        const state = get();
+        const current = state.dimensions[nodeId];
+
+        // change only if the node was not registered or the dims changed
+        if (!current) {
+            state.dimensions[nodeId] = dims;
+            set({ ...state, dimensions: { ...state.dimensions } });
+        } else if ((current.width != dims.width) || (current.height != dims.height)) {
+            state.dimensions[nodeId] = dims;
+            set({ ...state, dimensions: { ...state.dimensions } });
+        }
+    },
+
+    getDimensions: (nodeId) => {
+        const dims = get().dimensions[nodeId];
+
+        // change only if the node was not registered or the dims changed
+        if (!dims) {
+            return { width: 0, height: 0 };
+        }
+
+        return dims;
+    },
+
+    setRef: (nodeId, ref) => {
+        const state = get();
+        const refs = state.refs;
+        refs.set(nodeId, ref);
+        return set({ ...state });
+    },
 }));
 
+
+/**
+ * Synchronize node DOM element sizes so we can link changes in size to
+ * actions in react.
+ */
+export function useTransformationNodeDimensionsSync(nodes) {
+    const setDimensions = useTransformationNodeStore(state => state.setDimensions);
+    const refs = useTransformationNodeStore(state => state.refs);
+    useLayoutEffect(() => {
+        for (const [id, targetRef] of refs) {
+            if (targetRef.current) {
+                // column nodes associated to this node
+                const columns = nodes.filter(node => 
+                    (node.type == "column") && (node.parentNode == id) && !node.hidden
+                );
+                    
+                // bounding box that contains all of the columns
+                const bb = getRectOfNodes(columns);
+                const content = targetRef.current.querySelector(".transformation-node-content");
+                setDimensions(id, {
+                    width: max(content.scrollWidth, bb.width) + 20,
+                    // FIXME: the external div seems to be displaced 50px (or so) from the content
+                    //        so we have to add it manually
+                    height: max(content.scrollHeight, bb.height) + 50,
+                });
+            }
+        }
+    });
+}
 
 
 function TransformationNode({ id, data }) {
     // we use this to calculate this component's size
     // https://stackoverflow.com/questions/49058890/how-to-get-a-react-components-size-height-width-before-render
-    const [dimensions, setDimensions] = useState({ width:0, height: 0 });
+    const dimensions = useTransformationNodeStore(state => state.getDimensions(id));
+    const setRef = useTransformationNodeStore(state => state.setRef);
+
     const targetRef = useRef();
-    useLayoutEffect(() => {
-        if (targetRef.current) {
-          setDimensions({
-            width: targetRef.current.scrollWidth,
-            height: targetRef.current.scrollHeight
-          });
-        }
-    }, []);
-
-    // column nodes associated to this node
-    const columns = useNodes().filter(node => 
-        (node.type == "column") && (node.parentNode == id) && !node.hidden
-    );
-
-    // bounding box that contains all of the columns
-    const bb = getRectOfNodes(columns);
+    useLayoutEffect(() => setRef(id, targetRef), []);
 
     const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
         padding: `${PADDING}px`,
         backgroundColor: color,
-        height: max(dimensions.height, bb.height + PADDING * 2),
-        width: max(dimensions.width, bb.width + PADDING * 2),
+        height: dimensions.height,
+        width: dimensions.width,
     }
 
     let classes = ["transformation-node__container"];
-    if (nodeSelectionStore(state => state.isSelected(id))) {
+    if (useTransformationNodeStore(state => state.isSelected(id))) {
         classes.push("transformation-node-selected");
     }
 
     return (
         <div ref={targetRef} className={ classes.join(" ") } style={ nodeStyle }>
-            <Handle type="target" position={Position.Left} id="target" />
-            <p>{ data.label }</p>
-            <img src={ icon } width="50" height="50" />
-            <Summary transformation_type={data.type} metadata={data.metadata} />
-            <Handle type="source" position={Position.Right} id="source" />
+            {/* add an inner div so we can calculate the domensions of the node content.
+                we'll use this (and the column node sizes) to calculate the final node size
+                set in the `nodeStyle` */}
+            <div className="transformation-node-content">
+                <Handle type="target" position={Position.Left} id="target" />
+                <p>{ data.label }</p>
+                <img src={ icon } width="50" height="50" />
+                <Summary transformation_type={data.type} metadata={data.metadata} />
+                <Handle type="source" position={Position.Right} id="source" />
+            </div>
         </div>
     );
 }

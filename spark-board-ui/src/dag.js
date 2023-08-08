@@ -2,11 +2,10 @@
  * Module that implements some DAG algorithms.
  */
 
-import { getNodeElem } from './utils'
 
 
 // margin between nodes in the horizontal coordinates
-const HORIZONTAL_MARGIN = 60;
+const HORIZONTAL_MARGIN = 140;
 
 /**
  * Given a DAG, return the X and Y coordinates of each node in it to build
@@ -16,7 +15,7 @@ const HORIZONTAL_MARGIN = 60;
  * @returns Map of node id to and object with `x` and `y` attributes and bounding box
  *          that contains all nodes.
  */
-export function buildLayout(root_id, edges) {
+export function buildLayout(root_id, edges, tfNodeDims) {
     /* algorithm explanation: all nodes are placed in the middle (vertically) of
        their children according to a DFS ordering (this rule applied recursively).
        Leaf nodes (i.e. those without children) will be placed as if they've been
@@ -29,9 +28,11 @@ export function buildLayout(root_id, edges) {
 
     const adj_list = buildAdjacencyList(edges);
 
-    const levelWidths = calculateDagLevelWidth(root_id, adj_list);
-    const levelOffset = calculateLevelOffset(root_id, adj_list);
+    const levelWidths = calculateDagLevelWidth(root_id, adj_list, tfNodeDims);
+    const levelOffset = calculateLevelOffset(root_id, adj_list, tfNodeDims);
 
+    function getNodeDims(id) { return tfNodeDims[id] || {width: 80, height: 60}; }
+    
     function _calculate_position(node_id, depth) {
         if (!positions.has(node_id)) {
             positions.set(node_id, { x: null, y: null });
@@ -40,10 +41,10 @@ export function buildLayout(root_id, edges) {
 
         // find the node container element using the "data-id" attribute
         // we need this to get the node height
-        const nodeElem = getNodeElem(node_id);
+        const nodeDims = getNodeDims(node_id);
 
         // calculate the node X coordinate to center it horizontally in its level
-        const xCoord = levelOffset[depth] + (levelWidths.get(depth) - nodeElem.scrollWidth) / 2;
+        const xCoord = levelOffset[depth] + (levelWidths.get(depth) - nodeDims.width) / 2;
 
         if (!hasChildren(node_id, adj_list)) {
             // leaf nodes are positioned one "step" below the last leaf node
@@ -52,7 +53,7 @@ export function buildLayout(root_id, edges) {
             node_pos.x = xCoord;
 
             // update the leaf nodes y position for the next one
-            leaf_nodes_y += nodeElem.scrollHeight;
+            leaf_nodes_y += nodeDims.height;
             leaf_nodes_y += vMargin;
         } else {
             // calculate the area occupied by the direct children: find the
@@ -64,11 +65,11 @@ export function buildLayout(root_id, edges) {
             const child_y_end = Math.max(...yData.map((data) => data.y + data.height));
  
             // calculate the middle point between this node's first and last child
-            node_pos.y = (child_y_start + child_y_end) / 2 - nodeElem.scrollHeight / 2;
+            node_pos.y = (child_y_start + child_y_end) / 2 - nodeDims.height / 2;
 
             node_pos.x = xCoord;
         }
-        return { y: node_pos.y, height: nodeElem.scrollHeight };
+        return { y: node_pos.y, height: nodeDims.height };
     }
 
     _calculate_position(root_id, 0);
@@ -77,7 +78,7 @@ export function buildLayout(root_id, edges) {
     // lefmost and bottommost nodes
     const totalW = Math.max(...Array.from(positions).map(([id, pos]) => {
         // important: account for node width too
-        return pos.x + getNodeElem(id).scrollWidth;
+        return pos.x + getNodeDims(id).width;
     }));
     const totalH = leaf_nodes_y;
 
@@ -140,8 +141,8 @@ function nodeChildren(node_id, adj_list) {
  * @param {*} adjList Adjacency list that defines the DAG.
  * @returns Array where each index is the X offset for the level.
  */
-function calculateLevelOffset(rootId, adjList) {
-    const levelWidths = calculateDagLevelWidth(rootId, adjList);
+function calculateLevelOffset(rootId, adjList, tfNodeDims) {
+    const levelWidths = calculateDagLevelWidth(rootId, adjList, tfNodeDims);
     const levelOffsets = [];
 
     for (const [level, _] of levelWidths) {
@@ -161,7 +162,7 @@ function calculateLevelOffset(rootId, adjList) {
  * @param {Map} adjList Map from node IDs to a list of their child node IDs.
  * @returns A map mapping the depth level (integer) to its total width.
  */
-function calculateDagLevelWidth(rootId, adjList) {
+function calculateDagLevelWidth(rootId, adjList, tfNodeDims) {
     // maps the DAG depth levels into their corresponding width
     const levelWidths = new Map();
 
@@ -176,11 +177,11 @@ function calculateDagLevelWidth(rootId, adjList) {
         const current = visitStack.pop();
         const currentLevel = nodeLevel.get(current);
         
-        const elem = getNodeElem(current);
+        const dims = tfNodeDims[current] || {height: 80, width: 60};
         
         // the level width will be the widest element in it
-        if (!levelWidths.has(currentLevel) || levelWidths.get(currentLevel) < elem.scrollWidth) {
-            levelWidths.set(currentLevel, elem.scrollWidth);
+        if (!levelWidths.has(currentLevel) || levelWidths.get(currentLevel) < dims.width) {
+            levelWidths.set(currentLevel, dims.width);
         }
 
         // push child nodes of current node into the visit stack

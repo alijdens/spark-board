@@ -20,3 +20,7 @@ class DefaultSettings:
     # Data source nodes will appear multiple times on each used transformation that
     # accesses it.
     duplicateDataSources: bool = True
+
+    # whenever a node's size is changed, all the DAG layout is reacommodated (but still
+    # respecting the nodes that were manually placed).
+    organizeNodesOnResize: bool = False

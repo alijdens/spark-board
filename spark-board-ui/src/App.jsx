@@ -1,8 +1,8 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, MiniMap, Panel, useNodesInitialized, useReactFlow } from 'reactflow';
 
 import { shallow } from 'zustand/shallow';
-import TransformationNode, { getTransformationStyle, nodeSelectionStore } from './transformation';
+import TransformationNode, { getTransformationStyle, useTransformationNodeStore, useTransformationNodeDimensionsSync } from './transformation';
 import ColumnNode from './column';
 import SideBar from './sidebar';
 import drawColumnGraph, { useColumnGraphState } from './columnGraph';
@@ -26,10 +26,12 @@ export default function App() {
 
     // Selected transformation node: For the time being, it's chosen with onClick because we don't 
     // want to have multiple "selected nodes"
-    const { selectedTransformation, setSelectedTransformation } = nodeSelectionStore((state) => ({
+    const { selectedTransformation, setSelectedTransformation } = useTransformationNodeStore((state) => ({
         selectedTransformation: state.selectedTransformation,
         setSelectedTransformation: state.setSelectedTransformation,
     }), shallow);
+    // object that maps the node ID to the dimensions of each transformation node
+    const transformationNodeDims = useTransformationNodeStore(state => state.dimensions);
 
     const [settings, setSetting] = useSettings(model_defaultSettings);
     const [modelNodes, modelEdges] = useSparkDag(settings);
@@ -54,10 +56,12 @@ export default function App() {
         setNodes(modelNodes);
         setEdges(modelEdges);
 
-        if (nodesInitialized && modelNodes.length == nodes.length) {
-            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges);
+        if (nodesInitialized) {
+            animation.pause();
+            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
             setTransformationNodeTargetPositions(dagLayout);
-            animation.resetSystem(modelNodes, modelEdges, transformationNodeTargetPositions);
+            animation.resetSystem(modelNodes, modelEdges, dagLayout);
+            animation.start();
         }
         drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized);
     }, [nodesInitialized, modelNodes, modelEdges]);
@@ -91,7 +95,7 @@ export default function App() {
                 animation.updatePositions(new Map([[node.id, node.position]]));
             });
         } else {
-            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges);
+            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
             setNodes(nodes.map(node => {
                 if (dagLayout.has(node.id)) {
                     // only update nodes present in the layout
@@ -102,10 +106,23 @@ export default function App() {
         }
     }, [settings, nodes, modelEdges, setNodes]);
 
+    // sync node sizes in the DOM with the ones in the transformations store
+    useTransformationNodeDimensionsSync(nodes);
+
+    // update the DAG layout when the nodes sizes change
+    useMemo(() => {
+        if (settings.organizeNodesOnResize && nodesInitialized) {
+            // calculate the node positions in the screen
+            const [dagLayout, bounds] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
+            // set the node animation to position in the layout
+            setTransformationNodeTargetPositions(dagLayout);
+        }
+    }, [transformationNodeDims]);
+
     // this should be called after the nodes are initialized to organize the viewport and initial positions
     if (!initialDagLayoutApplied && nodesInitialized) {
         // calculate the node positions in the screen
-        const [dagLayout, bounds] = buildLayout(modelEdges[0].source, modelEdges);
+        const [dagLayout, bounds] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
         // set the node animation to position in the layout
         setTransformationNodeTargetPositions(dagLayout);
         // fit the viewport to the area of the graph
@@ -115,16 +132,6 @@ export default function App() {
 
         initialDagLayoutApplied = true;
     }
-
-    // reorganize nodes when they change (possibly in size)
-    useEffect(() => {
-        if (nodesInitialized && modelNodes.length == nodes.length) {
-            // calculate the node positions in the screen
-            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges);
-            // set the node animation to position in the layout
-            setTransformationNodeTargetPositions(dagLayout);
-        }
-    }, [nodesInitialized, modelEdges]);
 
     // Callback to set one node as selected, and reset the column tracking
     const onNodeClick = useCallback((event, node) => {
