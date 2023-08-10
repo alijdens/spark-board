@@ -21,7 +21,8 @@ class DagSimplifier(object):
 
 
 class MergeJoinAndProject(DagSimplifier):
-    """When the PySpark dataframe has a join, the resulting DAG has
+    """
+    When the PySpark dataframe has a join, the resulting DAG has
     two nodes: one is a Join, and the other is a Project. With this simplification
     both nodes are merged.
     When joining by column name, the node has one column representing the
@@ -96,6 +97,54 @@ class MergeJoinAndProject(DagSimplifier):
 
         return pcols
 
+class MergeDatasourceAndAlias(DagSimplifier):
+    """
+    When the PySpark dataframe represents a named table, it generates
+    two nodes: one containing the table data itself, and another one
+    containing an alias. This simplifier unifies both adding an
+    attribute to the table node.
+    When the datasource is a logical RDD, the alias is not added, so
+    this simplifier considers that case and skips it.
+    """
+
+    def __init__(self) -> None:
+        self.already_merged_relations: Set[TransformationNode] = set()
+
+    def can_apply(self, df: TransformationNode) -> bool:
+        if df.type != TransformationType.Alias:
+            return False
+        alias_node = df
+        if alias_node in self.already_merged_relations:
+            return False
+        if len(alias_node.children) != 1:
+            return False
+        relation_node = alias_node.children[0]
+        if relation_node.type != TransformationType.Relation:
+            return False
+        return True
+
+    def apply(self, original: TransformationNode) -> TransformationNode:
+        alias_node = original
+        relation_node = original.children[0]
+        new_node = TransformationNode(
+            type=TransformationType.Relation,
+            metadata=self._merge_metadata(alias_node.metadata, relation_node.metadata),
+            children=relation_node.children,
+            columns=self._merge_columns(alias_node.columns, relation_node.columns),
+        )
+        for c in new_node.columns.values():
+            c.node_id = new_node.id
+        self.already_merged_relations.add(new_node)
+        return new_node
+
+    def _merge_metadata(self, alias_data: Metadata, rel_data: Metadata):
+        return rel_data
+
+    def _merge_columns(self, alias_cols: Dict[int, TransformationColumn], rel_cols: Dict[int, TransformationColumn]) -> Dict[int, TransformationColumn]:
+        for col in alias_cols.values():
+            col.links = []
+        return alias_cols
+
 
 T = TypeVar("T")
 def flatten(l: List[List[T]]) -> List[T]:
@@ -103,7 +152,8 @@ def flatten(l: List[List[T]]) -> List[T]:
 
 
 all_heuristics = [
-    MergeJoinAndProject()
+    MergeJoinAndProject(),
+    MergeDatasourceAndAlias(),
 ]
 
 
