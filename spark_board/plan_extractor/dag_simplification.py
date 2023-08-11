@@ -128,19 +128,16 @@ class MergeDatasourceAndAlias(DagSimplifier):
         relation_node = original.children[0]
         new_node = TransformationNode(
             type=TransformationType.Relation,
-            metadata=self._merge_metadata(alias_node.metadata, relation_node.metadata),
+            metadata=relation_node.metadata,
             children=relation_node.children,
-            columns=self._merge_columns(alias_node.columns, relation_node.columns),
+            columns=self._remove_links(alias_node.columns),
         )
         for c in new_node.columns.values():
             c.node_id = new_node.id
         self.already_merged_relations.add(new_node)
         return new_node
 
-    def _merge_metadata(self, alias_data: Metadata, rel_data: Metadata):
-        return rel_data
-
-    def _merge_columns(self, alias_cols: Dict[int, TransformationColumn], rel_cols: Dict[int, TransformationColumn]) -> Dict[int, TransformationColumn]:
+    def _remove_links(self, alias_cols: Dict[int, TransformationColumn]) -> Dict[int, TransformationColumn]:
         for col in alias_cols.values():
             col.links = []
         return alias_cols
