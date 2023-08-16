@@ -154,12 +154,12 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         cities_rdd = inner_join.children[1]
         self._expect_rdd(node=cities_rdd, expected_schema=schema)
 
-    def test_data_source(self) -> None:
+    def test_data_source_not_simplified(self) -> None:
         # convert into table
         spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
         
         df = spark.table("table")
-        dag = build_dag(df)
+        dag = build_dag(df=df, simplify_dag=False)
 
         # TODO: it seems that tables generate 2 nodes: an "Alias" and the "DataSource"
         #       we could drop the alias in the final DAG because it's redundant
@@ -172,6 +172,19 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert table.type == TransformationType.Relation
         assert table.children == []
         assert table.metadata["table"] == "table"
+        spark.sql(f"drop table table")
+
+    def test_data_source_simplified(self) -> None:
+        # convert into table
+        spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
+
+        df = spark.table("table")
+        dag = build_dag(df=df, simplify_dag=True)
+
+        assert dag.type == TransformationType.Relation
+        assert dag.children == []
+        assert dag.metadata["table"] == "table"
+        spark.sql(f"drop table table")
 
     def test_join_simple(self) -> None:
         ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
