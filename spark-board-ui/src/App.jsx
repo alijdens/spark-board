@@ -50,7 +50,7 @@ export default function App() {
         modelNodes.map(node => [node.id, node.position])
     ));
     const nodesInitialized = useNodesInitialized();
-    const animation = useDagAnimation(modelNodes, modelEdges, transformationNodeTargetPositions, setNodes);
+    const animation = useDagAnimation(modelNodes, modelEdges, transformationNodeTargetPositions, setNodes, settings.animationEnabled);
 
     useEffect(() => {
         setNodes(modelNodes);
@@ -61,7 +61,9 @@ export default function App() {
             const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
             setTransformationNodeTargetPositions(dagLayout);
             animation.resetSystem(modelNodes, modelEdges, dagLayout);
+            if (settings.animationEnabled) {
             animation.start();
+        }
         }
         drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized);
     }, [nodesInitialized, modelNodes, modelEdges]);
@@ -72,7 +74,7 @@ export default function App() {
             // make sure to sync the node positions with the animation
             animation.updatePositions(new Map(nodes.map(node => [node.id, node.position])));
             // start the animation and return the stop function to pause it when unmounted
-            return animation.start();
+            animation.start();
         } else if (!settings.animationEnabled) {
             animation.pause();
         }

@@ -18,7 +18,7 @@ import { stepSimulation } from './physics';
  *          1. Callback that will start the animation when called.
  *          2. Callback that will update the node positions with the ones given.
  */
-export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
+export function useDagAnimation(nodes, edges, targetPositions, setNodes, enabled) {
     // mass of the nodes in the phyical simulation
     const nodeMass = 0.3;
 
@@ -29,11 +29,16 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
     }
 
     const animationId = useRef(null);
+    const settings = { enabled: enabled };
 
     const dt = 1/60;
     var startT = useRef(null);
-
+    
     function onFrame(t) {
+        if (!settings.enabled) {
+            animationId.current = null;
+            return;
+        }
         if (!startT.current) {
             startT.current = t;
         }
@@ -70,7 +75,7 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
         }
 
         // wait for the next frame
-        animationId.current = requestAnimationFrame(onFrame)
+        animationId.current = requestAnimationFrame(onFrame);
     }
 
     useEffect(() => {
@@ -91,12 +96,13 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
     return useMemo(() => Object.create({
         // start the animation
         start: () => {
+            settings.enabled = true;
             animationId.current = requestAnimationFrame(onFrame);
             return () => cancelAnimationFrame(animationId.current);
         },
 
         // pause the animation (make it not consider elasped time)
-        pause: () => startT.current = null,
+        pause: () => settings.enabled = false,
 
         // function that updates the node positions (not the target positions)
         updatePositions: (positions) => setPositions(positions, state, nodeIdMapping),
