@@ -58,12 +58,12 @@ export default function App() {
 
         if (nodesInitialized) {
             animation.pause();
-            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
+            const [dagLayout, _] = buildLayout(modelEdges, transformationNodeDims);
             setTransformationNodeTargetPositions(dagLayout);
             animation.resetSystem(modelNodes, modelEdges, dagLayout);
             if (settings.animationEnabled) {
-            animation.start();
-        }
+                animation.start();
+            }
         }
         drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized);
     }, [nodesInitialized, modelNodes, modelEdges]);
@@ -97,7 +97,7 @@ export default function App() {
                 animation.updatePositions(new Map([[node.id, node.position]]));
             });
         } else {
-            const [dagLayout, _] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
+            const [dagLayout, _] = buildLayout(modelEdges, transformationNodeDims);
             setNodes(nodes.map(node => {
                 if (dagLayout.has(node.id)) {
                     // only update nodes present in the layout
@@ -115,7 +115,7 @@ export default function App() {
     useMemo(() => {
         if (settings.organizeNodesOnResize && nodesInitialized) {
             // calculate the node positions in the screen
-            const [dagLayout, bounds] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
+            const [dagLayout, bounds] = buildLayout(modelEdges, transformationNodeDims);
             // set the node animation to position in the layout
             setTransformationNodeTargetPositions(dagLayout);
         }
@@ -124,7 +124,7 @@ export default function App() {
     // this should be called after the nodes are initialized to organize the viewport and initial positions
     if (!initialDagLayoutApplied && nodesInitialized) {
         // calculate the node positions in the screen
-        const [dagLayout, bounds] = buildLayout(modelEdges[0].source, modelEdges, transformationNodeDims);
+        const [dagLayout, bounds] = buildLayout(modelEdges, transformationNodeDims);
         // set the node animation to position in the layout
         setTransformationNodeTargetPositions(dagLayout);
         // fit the viewport to the area of the graph

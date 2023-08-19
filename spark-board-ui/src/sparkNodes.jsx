@@ -1,5 +1,4 @@
 import { useMemo, useCallback } from 'react';
-import _ from 'lodash';
 
 
 export default function useSparkDag(nodesConfig) {
@@ -125,5 +124,19 @@ function deduplicateDataSources(nodes, edges) {
         return edge;
     });
 
-    return [newNodes, newEdges]
+    return [newNodes, invertEdges(newEdges)];
+}
+
+/**
+ * Return the same input `edges` but inverting the source and target nodes.
+ * @param {*} edges List of DAG edges.
+ * @returns Same list but with edges inverted.
+ */
+function invertEdges(edges) {
+    return edges.map(edge => ({
+            ...edge,
+            source: edge.target,
+            target: edge.source,
+        })
+    );
 }

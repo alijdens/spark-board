@@ -15,7 +15,7 @@ const HORIZONTAL_MARGIN = 140;
  * @returns Map of node id to and object with `x` and `y` attributes and bounding box
  *          that contains all nodes.
  */
-export function buildLayout(root_id, edges, tfNodeDims) {
+export function buildLayout(edges, tfNodeDims) {
     /* algorithm explanation: all nodes are placed in the middle (vertically) of
        their children according to a DFS ordering (this rule applied recursively).
        Leaf nodes (i.e. those without children) will be placed as if they've been
@@ -26,31 +26,29 @@ export function buildLayout(root_id, edges, tfNodeDims) {
 
     const vMargin = 30;  // vertical margin between nodes
 
-    const adj_list = buildAdjacencyList(edges);
+    const adj_list = buildAdjacencyList(edges, false);
 
-    const levelWidths = calculateDagLevelWidth(root_id, adj_list, tfNodeDims);
-    const levelOffset = calculateLevelOffset(root_id, adj_list, tfNodeDims);
+    const nodeLevel = getNodeLevels(adj_list);
+    const levelWidths = calculateDagLevelWidth(adj_list, tfNodeDims);
+    const levelOffset = calculateLevelOffset(adj_list, tfNodeDims);
 
     function getNodeDims(id) { return tfNodeDims[id] || {width: 80, height: 60}; }
-    
-    function _calculate_position(node_id, depth) {
-        if (!positions.has(node_id)) {
-            positions.set(node_id, { x: null, y: null });
-        }
-        const node_pos = positions.get(node_id);
 
-        // find the node container element using the "data-id" attribute
-        // we need this to get the node height
-        const nodeDims = getNodeDims(node_id);
-
+    // set X coordinates of all nodes based on their DAG depth
+    for (let [nodeId, level] of nodeLevel) {
         // calculate the node X coordinate to center it horizontally in its level
-        const xCoord = levelOffset[depth] + (levelWidths.get(depth) - nodeDims.width) / 2;
+        const xCoord = levelOffset[level] + (levelWidths.get(level) - getNodeDims(nodeId).width) / 2;
+        positions.set(nodeId, { x: xCoord, y: null });
+    }
 
-        if (!hasChildren(node_id, adj_list)) {
+    function _calculateVerticalPosition(nodeId) {
+        const node_pos = positions.get(nodeId);
+        const nodeDims = getNodeDims(nodeId);
+
+        if (!hasChildren(nodeId, adj_list, nodeLevel)) {
             // leaf nodes are positioned one "step" below the last leaf node
             // positioned so far
             node_pos.y = leaf_nodes_y;
-            node_pos.x = xCoord;
 
             // update the leaf nodes y position for the next one
             leaf_nodes_y += nodeDims.height;
@@ -58,21 +56,22 @@ export function buildLayout(root_id, edges, tfNodeDims) {
         } else {
             // calculate the area occupied by the direct children: find the
             // lowest and highest Y coordinates of the children
-            const yData = nodeChildren(node_id, adj_list).map((child_id) => {
-                return _calculate_position(child_id, depth + 1);
+            const yData = nodeChildren(nodeId, adj_list, nodeLevel).map((child_id) => {
+                return _calculateVerticalPosition(child_id);
             });
             const child_y_start = Math.min(...yData.map((data) => data.y));
             const child_y_end = Math.max(...yData.map((data) => data.y + data.height));
  
             // calculate the middle point between this node's first and last child
             node_pos.y = (child_y_start + child_y_end) / 2 - nodeDims.height / 2;
-
-            node_pos.x = xCoord;
         }
         return { y: node_pos.y, height: nodeDims.height };
     }
 
-    _calculate_position(root_id, 0);
+    for (let nodeId of findRootNodes(adj_list)) {
+        _calculateVerticalPosition(nodeId);
+        leaf_nodes_y += vMargin;
+    }
 
     // calculate the total width and height of the DAG by finding the
     // lefmost and bottommost nodes
@@ -113,26 +112,33 @@ export function buildAdjacencyList(edges, bidirectional = false) {
             // HACK: animated edges are from the column nodes
             continue;
         }
-        if (!adjacencyList.has(edge.source)) {
-            adjacencyList.set(edge.source, []);
+
+        let [src, tgt] = [edge.source, edge.target];
+
+        if (!adjacencyList.has(src)) {
+            adjacencyList.set(src, []);
         }
-        if (!adjacencyList.has(edge.target)) {
-            adjacencyList.set(edge.target, []);
+        if (!adjacencyList.has(tgt)) {
+            adjacencyList.set(tgt, []);
         }
-        adjacencyList.get(edge.source).push(edge.target);
+        adjacencyList.get(src).push(tgt);
         if (bidirectional) {
-            adjacencyList.get(edge.target).push(edge.source);
+            adjacencyList.get(tgt).push(src);
         }
     }
     return adjacencyList;
 }
 
-function hasChildren(node_id, adj_list) {
-    return adj_list.get(node_id).length > 0;
+function hasChildren(node_id, adj_list, nodeLevel) {
+    return nodeChildren(node_id, adj_list, nodeLevel).length > 0;
 }
 
-function nodeChildren(node_id, adj_list) {
-    return adj_list.get(node_id);
+function nodeChildren(node_id, adj_list, nodeLevel) {
+    const level = nodeLevel.get(node_id);
+    // make sure to only return the children that are directly afetr the node
+    // it may happen that a single node has multiple parents, so we make sure to poition it
+    // after the parent node that is deepest
+    return adj_list.get(node_id).filter(childId => nodeLevel.get(childId) == level + 1);
 }
 
 /**
@@ -141,16 +147,18 @@ function nodeChildren(node_id, adj_list) {
  * @param {*} adjList Adjacency list that defines the DAG.
  * @returns Array where each index is the X offset for the level.
  */
-function calculateLevelOffset(rootId, adjList, tfNodeDims) {
-    const levelWidths = calculateDagLevelWidth(rootId, adjList, tfNodeDims);
+function calculateLevelOffset(adjList, tfNodeDims) {
+    const levelWidths = calculateDagLevelWidth(adjList, tfNodeDims);
     const levelOffsets = [];
 
-    for (const [level, _] of levelWidths) {
+    let level = 0;
+    while (levelWidths.has(level)) {
         if (level > 0) {
             levelOffsets[level] = levelWidths.get(level - 1) + levelOffsets[level - 1] + HORIZONTAL_MARGIN;
         } else {
             levelOffsets[0] = 0;
         }
+        level += 1;
     }
     return levelOffsets;
 }
@@ -158,38 +166,89 @@ function calculateLevelOffset(rootId, adjList, tfNodeDims) {
 /**
  * Calculate the width of each depth level in the DAG.
  * 
- * @param {string} rootId ID of the root node in the DAG.
  * @param {Map} adjList Map from node IDs to a list of their child node IDs.
  * @returns A map mapping the depth level (integer) to its total width.
  */
-function calculateDagLevelWidth(rootId, adjList, tfNodeDims) {
+function calculateDagLevelWidth(adjList, tfNodeDims) {
     // maps the DAG depth levels into their corresponding width
     const levelWidths = new Map();
 
-    // stack of nodes not visited yet
-    const visitStack = [rootId];  // start by given root node
+    const nodeLevel = getNodeLevels(adjList);
 
-    // map from the node ID to the depth level in the DAG
-    const nodeLevel = new Map();
-    nodeLevel.set(rootId, 0); // initialize root node as depth 0
+    for (let [node, level] of nodeLevel) {
+        const dims = tfNodeDims[node] || { height: 80, width: 60 };
 
-    while (visitStack.length > 0) {
-        const current = visitStack.pop();
-        const currentLevel = nodeLevel.get(current);
-        
-        const dims = tfNodeDims[current] || {height: 80, width: 60};
-        
         // the level width will be the widest element in it
-        if (!levelWidths.has(currentLevel) || levelWidths.get(currentLevel) < dims.width) {
-            levelWidths.set(currentLevel, dims.width);
-        }
-
-        // push child nodes of current node into the visit stack
-        for (let child of adjList.get(current)) {
-            visitStack.push(child);
-            nodeLevel.set(child, currentLevel + 1);
+        if (!levelWidths.has(level) || levelWidths.get(level) < dims.width) {
+            levelWidths.set(level, dims.width);
         }
     }
 
     return levelWidths;
+}
+
+/**
+ * Returns the IDs of all nodes that have no parent. It is expected
+ * that at least 1 node has none.
+ * @param {Map} adjList Adjacency list.
+ * @returns Set of root node IDs.
+ */
+function findRootNodes(adjList) {
+    const nodesWithParent = new Set();
+    for (let [node, children] of adjList) {
+        for (let child of children) {
+            nodesWithParent.add(child);
+        }
+    }
+
+    const rootNodes = [];
+    for (let [node, _] of adjList) {
+        if (!nodesWithParent.has(node)) {
+            rootNodes.push(node);
+        }
+    }
+    return rootNodes;
+}
+
+/**
+ * Maps a node ID to its assigned depth level in the DAG (counting
+ * from the root nodes).
+ * @param {Map} adjList Adjacency list
+ * @returns Map from node ID to integer DAG level.
+ */
+function getNodeLevels(adjList) {
+    // maps the node ID to its depth level in the DAG
+    const nodeLevel = new Map();
+
+    // stack of unvisited nodes (start by the root ones)
+    const visitStack = findRootNodes(adjList);
+
+    // initialize root nodes as depth 0
+    for (let rootNode of visitStack) {
+        nodeLevel.set(rootNode, 0);
+    }
+
+    while (visitStack.length > 0) {
+        const current = visitStack.pop();
+        const currentLevel = nodeLevel.get(current);
+
+        // push child nodes of current node into the visit stack
+        for (let child of adjList.get(current)) {
+            if (nodeLevel.has(child)) {
+                // handle the case where a node has multiple parents: we assign the child to the
+                // deepest parent
+                if (currentLevel + 1 > nodeLevel.get(child)) {
+                    nodeLevel.set(child, currentLevel + 1);
+
+                    // we have to update the descendants too
+                    visitStack.push(child);
+                }
+            } else {
+                nodeLevel.set(child, currentLevel + 1);
+                visitStack.push(child);
+            }
+        }
+    }
+
+    return nodeLevel;
 }
