@@ -10,7 +10,7 @@ import { buildLayout } from './dag'
 import useDagAnimation from './useDagAnimation';
 import CustomControls from './controls';
 import { useSettings, Settings } from "./settings";
-import useSparkDag from "./sparkNodes";
+import useSparkDag from "./useSparkNodes";
 
 import 'reactflow/dist/style.css';
 import './transformation.css';
