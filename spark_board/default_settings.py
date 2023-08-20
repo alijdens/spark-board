@@ -24,3 +24,7 @@ class DefaultSettings:
     # whenever a node's size is changed, all the DAG layout is reacommodated (but still
     # respecting the nodes that were manually placed).
     organizeNodesOnResize: bool = False
+
+    # inverts the DAG layout (from data source nodes to last transformation or the
+    # other way around).
+    invertDag: bool = False

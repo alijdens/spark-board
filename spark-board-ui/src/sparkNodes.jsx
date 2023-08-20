@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { Settings } from './settings';
 
 
 export default function useSparkDag(nodesConfig) {
@@ -32,13 +33,20 @@ export default function useSparkDag(nodesConfig) {
     })
 
     const nodesAndEdges = useMemo(() => {
+        let [nodes, edges] = [null, null];
         if (nodesConfig.duplicateDataSources) {
             // DAG data sources are expected to already be duplicated
-            return [baseNodes, baseEdges];
+            [nodes, edges] = [baseNodes, baseEdges];
         } else {
-            return deduplicateDataSources(baseNodes, baseEdges);
+            [nodes, edges] = deduplicateDataSources(baseNodes, baseEdges);
         }
-    }, [nodesConfig.duplicateDataSources]);
+
+        if (nodesConfig.invertDag) {
+            edges = invertEdges(edges);
+        }
+
+        return [nodes, edges];
+    }, [nodesConfig.duplicateDataSources, nodesConfig.invertDag]);
 
     return nodesAndEdges;
 }
