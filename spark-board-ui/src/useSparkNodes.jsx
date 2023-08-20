@@ -52,32 +52,61 @@ export default function useSparkDag(nodesConfig) {
 }
 
 
+/**
+ * Merges all transformation nodes that represent the same data source.
+ * For example, all data sources that represent the same table will be collapsed
+ * into a single node for that table, and all transformations that are connected
+ * to them will be connected to the single DS.
+ * Note that Spark will create a DS node each time a transformation needs to
+ * access it. For example, a join between a table and itself will create 2 DS
+ * nodes for the same table connected to the join.
+ * 
+ * @param {list} nodes DAG nodes.
+ * @param {list} edges DAG edges.
+ * @returns new nodes and edges representing the DAG with merged data sources.
+ */
 function deduplicateDataSources(nodes, edges) {
+    // STEP 1: find all repeated data sources and define which one will replace the others
+    
+    // data source node IDs
     const dataSourceIds = new Set();
+    // data source key (string that identifies the DS) => unique data source node ID
     const dataSources = new Map();
+    // data source node ID => Id of the data source node that will replace it (the unique one)
     const nodesToRemove = new Map();
 
+    // find all repeated data sources and store them in the maps with the indication
+    // of which one will replace the others
     nodes.forEach(node => {
         if (node.type == "transformation" && node.data.type == "DataSource") {
+            // use the metadata to compare data sources (same JSON metadata is considered
+            // as a node to the same DS)
             const key = JSON.stringify(node.data.metadata);
             if (dataSources.has(key)) {
+                // this is a duplicated DS, so we store the node ID of the one that will
+                // replace it
                 nodesToRemove.set(node.id, dataSources.get(key));
             } else {
+                // DS has not been seen so far, so we store it in the map
                 dataSources.set(key, node.id);
                 dataSourceIds.add(node.id);
             }
         }
     });
 
+    // STEP 2: find the column nodes belonging to the deleted data sources
+    //         and find the corresponding replacement
+
+    // take a column node and return a string that identifies it
+    // columns with the same key are considered to be the same
     function colKey(colNode) {
         return JSON.stringify({
-            // id: colNode.data.id,
             name: colNode.data.name,
             type: colNode.data.type,
         });
     }
 
-    // transformation node ID => Map(colKey => column node ID)
+    // DS node ID => Map(colKey => column node ID)
     const DSCols = new Map();
     nodes.forEach(node => {
         if (node.type == "column" && dataSourceIds.has(node.parentNode)) {
@@ -99,7 +128,9 @@ function deduplicateDataSources(nodes, edges) {
             colsToRemove.set(node.id, replacementId);
         }
     });
+    // remove all nodes marked to be deleted
     let newNodes = nodes.filter(node => !nodesToRemove.has(node.id) && !colsToRemove.has(node.id)).map(node => {
+        // now update all references to the deleted nodes by the dedeplicated ones
         switch (node.type) {
             case "transformation": return {
                 ...node,
