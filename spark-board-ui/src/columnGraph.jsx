@@ -18,13 +18,20 @@ import React from 'react';
  * Returns the column and the callback to update it.
  * To unset the column (and hide the column graph) you can set it to `null`.
  * 
- * @param {node} initialColumn Initial column selected (or null). 
+ * @param {node} initialColumn Initial column selected (or null).
+ * @returns selected column state
+ *          setSelectedColumn callback to update the selected column.
+ *          nodeGraph: a dummy state to chain when the node graph is updated.
+ *          onGraphUpdate: callback to update the node graph (and trigger dependent effects).
  */
 export function useColumnGraphState(initialColumn) {
     // When the user selects a column, the column tracking has the ids for all the columns that 
     // originate the selected one.
     const [selectedColumn, setSelectedColumn] = React.useState(initialColumn);
-    return [selectedColumn, setSelectedColumn]
+
+    const [nodeGraph, setNodeGraph] = React.useState({});
+
+    return [selectedColumn, setSelectedColumn, nodeGraph, () => setNodeGraph({})];
 }
 
 /**
@@ -34,9 +41,10 @@ export function useColumnGraphState(initialColumn) {
  * @param {callback} setNodes callback returned by react-flow.
  * @param {callback} setEdges callback returned by react-flow.
  * @param {node} selectedColumn Column to show the graph for (or null).
- * @param {Map} nodesById a dictionary of all nodes by id-
+ * @param {Map} nodesById a dictionary of all nodes by id.
+ * @param {callback} onUpdate update callback returned by `useColumnGraphState`.
  */
-function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized) {
+function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized, onUpdate) {
     const isColumnSelected = (selectedColumn !== null) && (selectedColumn !== undefined);
 
     // find the selected column graph
@@ -73,6 +81,8 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesIni
         }
         return edge;
     }));
+
+    onUpdate();
 }
 
 export default drawColumnGraph;

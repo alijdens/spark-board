@@ -2,7 +2,7 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { useLayoutEffect, useRef, useMemo } from "react";
+import { useLayoutEffect, useRef, useMemo, useEffect, useCallback } from "react";
 import { Handle, Position, getRectOfNodes } from 'reactflow';
 import { max } from './utils';
 import { create } from 'zustand';
@@ -37,6 +37,8 @@ export const useTransformationNodeStore = create((set, get) => ({
     selectedTransformation: null,
     // map from node Id to dimensions (width and height)
     dimensions: {},
+    // node content dimension (not counting strech by column nodes)
+    contentDims: {},
     refs: new Map(),
 
     // sets the given node as the selected one
@@ -48,6 +50,14 @@ export const useTransformationNodeStore = create((set, get) => ({
     // returns whtether the given `nodeId` corresponds to the selected node
     isSelected: (nodeId) => {
         return (get().selectedTransformation !== null) && (get().selectedTransformation.id == nodeId)
+    },
+
+    setContentDims: (id, dims) => {
+        const state = get();
+        const contentDims = state.contentDims;
+        contentDims[id] = dims;
+
+        set({ ...state, contentDims: contentDims });
     },
 
     setDimensions: (nodeId, dims) => {
@@ -66,12 +76,9 @@ export const useTransformationNodeStore = create((set, get) => ({
 
     getDimensions: (nodeId) => {
         const dims = get().dimensions[nodeId];
-
-        // change only if the node was not registered or the dims changed
         if (!dims) {
             return { width: 0, height: 0 };
         }
-
         return dims;
     },
 
@@ -91,7 +98,10 @@ export const useTransformationNodeStore = create((set, get) => ({
 export function useTransformationNodeDimensionsSync(nodes) {
     const setDimensions = useTransformationNodeStore(state => state.setDimensions);
     const refs = useTransformationNodeStore(state => state.refs);
-    useLayoutEffect(() => {
+    const contentDims = useTransformationNodeStore(state => state.contentDims);
+
+    return useCallback(() => {
+        let updated = false;
         for (const [id, targetRef] of refs) {
             if (targetRef.current) {
                 // column nodes associated to this node
@@ -101,16 +111,19 @@ export function useTransformationNodeDimensionsSync(nodes) {
                     
                 // bounding box that contains all of the columns
                 const bb = getRectOfNodes(columns);
-                const content = targetRef.current.querySelector(".transformation-node-content");
+                const content = contentDims[id];
                 setDimensions(id, {
-                    width: max(content.scrollWidth, bb.width) + 20,
+                    width: max(content.width, bb.width) + 20,
                     // FIXME: the external div seems to be displaced 50px (or so) from the content
                     //        so we have to add it manually
-                    height: max(content.scrollHeight, bb.height) + 50,
+                    height: max(content.height, bb.height) + 50,
                 });
+
+                updated = true;
             }
         }
-    });
+        return updated;
+    }, [nodes]);
 }
 
 
@@ -119,9 +132,18 @@ function TransformationNode({ id, data }) {
     // https://stackoverflow.com/questions/49058890/how-to-get-a-react-components-size-height-width-before-render
     const dimensions = useTransformationNodeStore(state => state.getDimensions(id));
     const setRef = useTransformationNodeStore(state => state.setRef);
+    const setContentDims = useTransformationNodeStore(state => state.setContentDims);
 
     const targetRef = useRef();
-    useLayoutEffect(() => setRef(id, targetRef), []);
+    useLayoutEffect(() => {
+        setRef(id, targetRef);
+
+        const content = targetRef.current.querySelector(".transformation-node-content");
+        setContentDims(id, {
+            width: content.scrollWidth,
+            height: content.scrollHeight,
+        });
+    }, []);
 
     const [color, icon] = getTransformationStyle(data.type);
 

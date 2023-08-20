@@ -19,7 +19,8 @@ import './App.css'
 
 // indicates whether the DAG layout was already set (so we can do it only 1 time)
 let initialDagLayoutApplied = false;
-
+// whether the node dimensions were already calculated and stored in the store
+let dimsInitialized = false;
 
 export default function App() {
     const { fitBounds } = useReactFlow();
@@ -52,11 +53,20 @@ export default function App() {
     const nodesInitialized = useNodesInitialized();
     const animation = useDagAnimation(modelNodes, modelEdges, transformationNodeTargetPositions, setNodes, settings.animationEnabled);
 
+    // Map containing all nodes, both transformations and columns
+    const nodesById = useMemo(() => getNodesById(modelNodes), [modelNodes]);
+
+    // controls the column for which the column graph is shown
+    const [selectedColumn, setSelectedColumn, nodeGraph, onGraphUpdate] = useColumnGraphState(null);
+    useMemo(() => {
+        drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized, onGraphUpdate);
+    }, [selectedColumn, nodesInitialized]);
+
     useEffect(() => {
         setNodes(modelNodes);
         setEdges(modelEdges);
 
-        if (nodesInitialized) {
+        if (nodesInitialized && dimsInitialized) {
             animation.pause();
             const [dagLayout, _] = buildLayout(modelEdges, transformationNodeDims);
             setTransformationNodeTargetPositions(dagLayout);
@@ -65,8 +75,16 @@ export default function App() {
                 animation.start();
             }
         }
-        drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized);
+        drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized, onGraphUpdate);
     }, [nodesInitialized, modelNodes, modelEdges]);
+
+    useMemo(() => {
+        // check if the selected node was deleted
+        if (selectedTransformation && !nodesById.has(selectedTransformation.id)) {
+            setSelectedColumn(null);
+            setSelectedTransformation(null);
+        }
+    }, [modelNodes]);
 
     // this function will start or stop the animation based on the settings
     useEffect(() => {
@@ -80,14 +98,11 @@ export default function App() {
         }
     }, [nodesInitialized, settings, modelNodes]);
 
-    // Map containing all nodes, both transformations and columns
-    const nodesById = useMemo(() => getNodesById(modelNodes), [modelNodes]);
-
-    // controls the column for which the column graph is shown
-    const [selectedColumn, setSelectedColumn] = useColumnGraphState(null);
-    useMemo(() => {
-        drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized);
-    }, [selectedColumn, nodesInitialized]);
+    // sync node sizes in the DOM with the ones in the transformations store
+    const updateDims = useTransformationNodeDimensionsSync(nodes);
+    useEffect(() => {
+        dimsInitialized = updateDims();
+    }, [nodeGraph, updateDims]);
 
     // callback that organizes the nodes in the screen using the default layout
     const organizeNodes = useCallback(() => {
@@ -108,9 +123,6 @@ export default function App() {
         }
     }, [settings, nodes, modelEdges, setNodes]);
 
-    // sync node sizes in the DOM with the ones in the transformations store
-    useTransformationNodeDimensionsSync(nodes);
-
     // update the DAG layout when the nodes sizes change
     useMemo(() => {
         if (settings.organizeNodesOnResize && nodesInitialized) {
@@ -119,21 +131,22 @@ export default function App() {
             // set the node animation to position in the layout
             setTransformationNodeTargetPositions(dagLayout);
         }
+
+        // this should be called after the nodes are initialized to organize the viewport and initial positions
+        if (!initialDagLayoutApplied && nodesInitialized && dimsInitialized) {
+            // calculate the node positions in the screen
+            const [dagLayout, bounds] = buildLayout(modelEdges, transformationNodeDims);
+            // set the node animation to position in the layout
+            setTransformationNodeTargetPositions(dagLayout);
+            // fit the viewport to the area of the graph
+            fitBounds(bounds, { duration: 0, padding: 0.1 });
+            // orgnaize the nodes
+            organizeNodes();
+    
+            animation.setTargetPositions(dagLayout);
+            initialDagLayoutApplied = true;
+        }
     }, [transformationNodeDims]);
-
-    // this should be called after the nodes are initialized to organize the viewport and initial positions
-    if (!initialDagLayoutApplied && nodesInitialized) {
-        // calculate the node positions in the screen
-        const [dagLayout, bounds] = buildLayout(modelEdges, transformationNodeDims);
-        // set the node animation to position in the layout
-        setTransformationNodeTargetPositions(dagLayout);
-        // fit the viewport to the area of the graph
-        fitBounds(bounds, { duration: 0, padding: 0.1 });
-        // orgnaize the nodes
-        organizeNodes();
-
-        initialDagLayoutApplied = true;
-    }
 
     // Callback to set one node as selected, and reset the column tracking
     const onNodeClick = useCallback((event, node) => {

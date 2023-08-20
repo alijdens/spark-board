@@ -121,6 +121,20 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes, enabled
             nodeIdMapping = createNodeIdMapping(nodes);
             state.current = createSystem(nodes, edges, targetPositions, nodeIdMapping, nodeMass);
         },
+
+        setTargetPositions: (targetPositions) => {
+            // update artificial node positions with new ones
+            const [pos, v, adjList, distances, mass] = state.current;
+
+            for (let [id, i] of nodeIdMapping) {
+                let j = i * 2 + nodeIdMapping.size * 2;
+                pos[j] = targetPositions.get(id).x;
+                pos[j + 1] = targetPositions.get(id).y;
+            }
+
+            // update the spring distances
+            state.current[3] = getSprings(targetPositions, nodeIdMapping, adjList, nodes);
+        }
     }), []);
 }
 
