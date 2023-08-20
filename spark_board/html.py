@@ -6,7 +6,7 @@ import dataclasses
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
-from .plan_extractor.transformations_dag import TransformationColumn, TransformationNode, TransformationType
+from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
 
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple
@@ -24,15 +24,19 @@ const model_initialEdges = {links};
 
 class Encoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
+        if type(o) is JoinCondition:
+            return dataclasses.asdict(o)
         return json.JSONEncoder.default(self, o)    
 
 
-def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings) -> None:
+def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings, simplify_dag: bool=True) -> None:
     """Create a visual representation of the given `dag` in HTML. The HTML
     files will be saved in the `output_dir` directory. If `overwrite` is
-    True, the output directory will be deleted if it already exists."""
+    True, the output directory will be deleted if it already exists.
+    If `simplify_dag` is True, a series of heuristics will be applied to
+    simplify the resulting DAG."""
 
-    tree = build_dag(df=df)
+    tree = build_dag(df=df, simplify_dag=simplify_dag)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
