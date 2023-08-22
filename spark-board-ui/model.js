@@ -11,9 +11,9 @@
 const model_defaultSettings = {
     "animationEnabled": true,
     "animationEnabledOnDrag": true,
-    "duplicateDataSources": true,
+    "duplicateDataSources": false,
     "organizeNodesOnResize": false,
-    "invertDag": false
+    "invertDag": true
 };
 
 const model_initialNodes = [

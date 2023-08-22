@@ -1,5 +1,4 @@
-import { useMemo, useCallback } from 'react';
-import { Settings } from './settings';
+import { useMemo } from 'react';
 
 
 export default function useSparkDag(nodesConfig) {
@@ -163,7 +162,7 @@ function deduplicateDataSources(nodes, edges) {
         return edge;
     });
 
-    return [newNodes, invertEdges(newEdges)];
+    return [newNodes, newEdges];
 }
 
 /**
