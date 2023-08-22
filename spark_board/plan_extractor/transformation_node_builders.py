@@ -156,9 +156,9 @@ class JoinNodeBuilder(TransformationNodeBuilder):
         reference_ids = [ref.exprId().id() for ref in iterate_java_object(cond.references())]
         return JoinCondition(cond.sql(), cond.treeString(), is_equi_join, equi_join_columns)
 
-    def _get_column_name(self, java_object: JavaObject) -> str:
+    def _get_column_name(self, java_object: JavaObject) -> Optional[str]:
         if java_object.nodeName() == "AttributeReference":
-            return java_object.name()
+            return str(java_object.name())
         elif java_object.nodeName() == "Cast":
             return self._get_column_name(java_object.child())
         else:
@@ -173,7 +173,7 @@ class JoinNodeBuilder(TransformationNodeBuilder):
                 return False, {}
             name1 = self._get_column_name(cols[0])
             name2 = self._get_column_name(cols[1])
-            if name1 != None and name2 != None and name1 == name2:
+            if name1 is not None and name1 == name2:
                 return True, {name1: reference_ids}
             else:
                 return False, {}
