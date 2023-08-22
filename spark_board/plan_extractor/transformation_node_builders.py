@@ -157,7 +157,6 @@ class JoinNodeBuilder(TransformationNodeBuilder):
         return JoinCondition(cond.sql(), cond.treeString(), is_equi_join, equi_join_columns)
 
     def _get_column_name(self, java_object: JavaObject) -> str:
-        print(f"Node name: {java_object.nodeName()}")
         if java_object.nodeName() == "AttributeReference":
             return java_object.name()
         elif java_object.nodeName() == "Cast":
