@@ -306,6 +306,23 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                           expected_condition='(a = a)',
                           expected_join_type='Inner')
 
+    def test_join_casting_column(self) -> None:
+        # Notice the different types for columns named "b"
+        ab = spark.createDataFrame([], schema="struct<a: double, b: double>")
+        bc = spark.createDataFrame([], schema="struct<b: int, c: double>")
+        df = ab.join(bc, on=["b"])
+
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- c: double (nullable = true)\n")
+        self._expect_join(node=dag,
+                          expected_schema=schema,
+                          expected_condition='(b = CAST(b AS DOUBLE))',
+                          expected_join_type='Inner')
+
     def test_window(self) -> None:
         df = spark.createDataFrame([], schema="struct<revenue: float, date: string>")
         # create a 3 day rolling average of the revenue
