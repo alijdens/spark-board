@@ -16,3 +16,15 @@ class DefaultSettings:
 
     # nodes are animated (pull linked nodes) when dragged with the mouse on the screen
     animationEnabledOnDrag: bool = True
+
+    # Data source nodes will appear multiple times on each used transformation that
+    # accesses it.
+    duplicateDataSources: bool = False
+
+    # whenever a node's size is changed, all the DAG layout is reacommodated (but still
+    # respecting the nodes that were manually placed).
+    organizeNodesOnResize: bool = False
+
+    # inverts the DAG layout (from data source nodes to last transformation or the
+    # other way around).
+    invertDag: bool = True

@@ -14,30 +14,37 @@ import { stepSimulation } from './physics';
  * @param {Array} edges react-flow edges.
  * @param {Map} targetPositions Map from the node IDs to the target positions (objects with `x` and `y`).
  * @param {Callback} setNodes react-flow state setter to update the nodes.
- * @returns Two elements:
- *          1. Callback that will start the animation when called.
- *          2. Callback that will update the node positions with the ones given.
+ * @param {Boolean} enabled Controls whether the animation is enabled or not.
+ * @returns Memoized object that controls the animation.
  */
-export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
+export function useDagAnimation(nodes, edges, targetPositions, setNodes, enabled) {
     // mass of the nodes in the phyical simulation
     const nodeMass = 0.3;
 
-    let nodeIdMapping = useRef(createNodeIdMapping(nodes));
-    let state = useRef(createSystem(nodes, edges, targetPositions, nodeIdMapping.current, nodeMass));
+    let nodeIdMapping = useMemo(() => createNodeIdMapping(nodes), [nodes]);
+    let state = useRef(null);
+    if (state.current === null) {
+        state.current = createSystem(nodes, edges, targetPositions, nodeIdMapping, nodeMass);
+    }
 
     const animationId = useRef(null);
+    const settings = { enabled: enabled };
 
     const dt = 1/60;
     var startT = useRef(null);
-
+    
     function onFrame(t) {
+        if (!settings.enabled) {
+            animationId.current = null;
+            return;
+        }
         if (!startT.current) {
             startT.current = t;
         }
         let elapsed = (t - startT.current) / 1000;
 
         if (elapsed > 5) {
-            // too much time has passed, reset the start time so we don't run many updated
+            // too much time has passed, reset the start time so we don't run many updates
             // this could happen if the tab was inactive for a while
             startT.current = t;
             elapsed = 0;
@@ -56,7 +63,7 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
             // update the node positions
             setNodes((nds) => nds.map(node => {
                 if (node.type == "transformation") {
-                    const i = nodeIdMapping.current.get(node.id);
+                    const i = nodeIdMapping.get(node.id);
                     node.position = {
                         x: state.current[0][i * 2],
                         y: state.current[0][i * 2 + 1]
@@ -67,47 +74,67 @@ export function useDagAnimation(nodes, edges, targetPositions, setNodes) {
         }
 
         // wait for the next frame
-        animationId.current = requestAnimationFrame(onFrame)
+        animationId.current = requestAnimationFrame(onFrame);
     }
 
     useEffect(() => {
         // update artificial node positions with new ones
         const [pos, v, adjList, distances, mass] = state.current;
 
-        for(let [id, i] of nodeIdMapping.current) {
-            let j = i * 2 + nodeIdMapping.current.size * 2;
+        for (let [id, i] of nodeIdMapping) {
+            let j = i * 2 + nodeIdMapping.size * 2;
             pos[j] = targetPositions.get(id).x;
             pos[j + 1] = targetPositions.get(id).y;
         }
 
         // update the spring distances
-        state.current[3] = getSprings(targetPositions, nodeIdMapping.current, adjList, nodes);
+        state.current[3] = getSprings(targetPositions, nodeIdMapping, adjList, nodes);
     }, [targetPositions]);
 
     // return an object to control the animation
     return useMemo(() => Object.create({
         // start the animation
         start: () => {
+            settings.enabled = true;
             animationId.current = requestAnimationFrame(onFrame);
             return () => cancelAnimationFrame(animationId.current);
         },
 
         // pause the animation (make it not consider elasped time)
-        pause: () => startT.current = null,
+        pause: () => settings.enabled = false,
 
         // function that updates the node positions (not the target positions)
         updatePositions: (positions) => setPositions(positions, state, nodeIdMapping),
 
         // function to fix or un-fix node position
         setNodeFixed: (nodeId, fixed) => {
-            const id = nodeIdMapping.current.get(nodeId); // internal ID
+            const id = nodeIdMapping.get(nodeId); // internal ID
 
             // fix the node position by making its mass inifinite and velocity 0
             state.current[4][id] = fixed ? Infinity : nodeMass;
             state.current[1][id * 2] = 0.0;
             state.current[1][id * 2 + 1] = 0.0;
+        },
+
+        resetSystem: (nodes, edges, targetPositions) => {
+            nodeIdMapping = createNodeIdMapping(nodes);
+            state.current = createSystem(nodes, edges, targetPositions, nodeIdMapping, nodeMass);
+        },
+
+        setTargetPositions: (targetPositions) => {
+            // update artificial node positions with new ones
+            const [pos, v, adjList, distances, mass] = state.current;
+
+            for (let [id, i] of nodeIdMapping) {
+                let j = i * 2 + nodeIdMapping.size * 2;
+                pos[j] = targetPositions.get(id).x;
+                pos[j + 1] = targetPositions.get(id).y;
+            }
+
+            // update the spring distances
+            state.current[3] = getSprings(targetPositions, nodeIdMapping, adjList, nodes);
         }
-    }));
+    }), []);
 }
 
 
@@ -115,7 +142,7 @@ function setPositions(positions, state, nodeIdMapping) {
     const pos = state.current[0];
 
     for (let [id, position] of positions) {
-        const i = nodeIdMapping.current.get(id);
+        const i = nodeIdMapping.get(id);
         pos[i * 2] = position.x;
         pos[i * 2 + 1] = position.y;
     }

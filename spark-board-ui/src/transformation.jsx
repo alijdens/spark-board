@@ -2,7 +2,10 @@
  * Custom Node component for react-flow to represent Spark transformations.
  */
 
-import { Handle, Position, useStore } from 'reactflow';
+import { useLayoutEffect, useRef, useMemo, useEffect, useCallback } from "react";
+import { Handle, Position, getRectOfNodes } from 'reactflow';
+import { max } from './utils';
+import { create } from 'zustand';
 
 import AddColumnIcon from './assets/addColumn.svg';
 import AliasIcon from './assets/alias.svg';
@@ -23,39 +26,152 @@ import UploadIcon from './assets/upload.svg';
 import GlobalLimitIcon from './assets/upper-limit.svg';
 
 
+const PADDING = 10;
+
+
+/**
+ * This state stores transformation node properties that we want to expose to the main app.
+ */
+export const useTransformationNodeStore = create((set, get) => ({
+    // seletected transformation node (used to render the sidebar)
+    selectedTransformation: null,
+    // map from node Id to dimensions (width and height)
+    dimensions: {},
+    // node content dimension (not counting strech by column nodes)
+    contentDims: {},
+    refs: new Map(),
+
+    // sets the given node as the selected one
+    setSelectedTransformation: (node) => {
+        const state = get();
+        set({ ...state, selectedTransformation: node });
+    },
+
+    // returns whtether the given `nodeId` corresponds to the selected node
+    isSelected: (nodeId) => {
+        return (get().selectedTransformation !== null) && (get().selectedTransformation.id == nodeId)
+    },
+
+    setContentDims: (id, dims) => {
+        const state = get();
+        const contentDims = state.contentDims;
+        contentDims[id] = dims;
+
+        set({ ...state, contentDims: contentDims });
+    },
+
+    setDimensions: (nodeId, dims) => {
+        const state = get();
+        const current = state.dimensions[nodeId];
+
+        // change only if the node was not registered or the dims changed
+        if (!current) {
+            state.dimensions[nodeId] = dims;
+            set({ ...state, dimensions: { ...state.dimensions } });
+        } else if ((current.width != dims.width) || (current.height != dims.height)) {
+            state.dimensions[nodeId] = dims;
+            set({ ...state, dimensions: { ...state.dimensions } });
+        }
+    },
+
+    getDimensions: (nodeId) => {
+        const dims = get().dimensions[nodeId];
+        if (!dims) {
+            return { width: 0, height: 0 };
+        }
+        return dims;
+    },
+
+    setRef: (nodeId, ref) => {
+        const state = get();
+        const refs = state.refs;
+        refs.set(nodeId, ref);
+        return set({ ...state });
+    },
+}));
+
+
+/**
+ * Synchronize node DOM element sizes so we can link changes in size to
+ * actions in react.
+ */
+export function useTransformationNodeDimensionsSync(nodes) {
+    const setDimensions = useTransformationNodeStore(state => state.setDimensions);
+    const refs = useTransformationNodeStore(state => state.refs);
+    const contentDims = useTransformationNodeStore(state => state.contentDims);
+
+    return useCallback(() => {
+        let updated = false;
+        for (const [id, targetRef] of refs) {
+            if (targetRef.current) {
+                // column nodes associated to this node
+                const columns = nodes.filter(node => 
+                    (node.type == "column") && (node.parentNode == id) && !node.hidden
+                );
+                    
+                // bounding box that contains all of the columns
+                const bb = getRectOfNodes(columns);
+                const content = contentDims[id];
+                setDimensions(id, {
+                    width: max(content.width, bb.width) + 20,
+                    // FIXME: the external div seems to be displaced 50px (or so) from the content
+                    //        so we have to add it manually
+                    height: max(content.height, bb.height) + 50,
+                });
+
+                updated = true;
+            }
+        }
+        return updated;
+    }, [nodes]);
+}
+
+
 function TransformationNode({ id, data }) {
-    // This resizes the NodeWrapper when the div is resized
-    const size = useStore((s) => {
-        const node = s.nodeInternals.get(id);
-        return {
-            height: node.height,
-            width: node.width,
-        };
-    });
+    // we use this to calculate this component's size
+    // https://stackoverflow.com/questions/49058890/how-to-get-a-react-components-size-height-width-before-render
+    const dimensions = useTransformationNodeStore(state => state.getDimensions(id));
+    const setRef = useTransformationNodeStore(state => state.setRef);
+    const setContentDims = useTransformationNodeStore(state => state.setContentDims);
+
+    const targetRef = useRef();
+    useLayoutEffect(() => {
+        setRef(id, targetRef);
+
+        const content = targetRef.current.querySelector(".transformation-node-content");
+        setContentDims(id, {
+            width: content.scrollWidth,
+            height: content.scrollHeight,
+        });
+    }, []);
 
     const [color, icon] = getTransformationStyle(data.type);
 
     const nodeStyle = {
+        padding: `${PADDING}px`,
         backgroundColor: color,
-        height: size.height,
-        width: size.width,
+        height: dimensions.height,
+        width: dimensions.width,
     }
 
     let classes = ["transformation-node__container"];
-    if (data.selected()) {
+    if (useTransformationNodeStore(state => state.isSelected(id))) {
         classes.push("transformation-node-selected");
     }
 
     return (
-        <>
-            <div className={ classes.join(" ") } style={ nodeStyle }>
+        <div ref={targetRef} className={ classes.join(" ") } style={ nodeStyle }>
+            {/* add an inner div so we can calculate the domensions of the node content.
+                we'll use this (and the column node sizes) to calculate the final node size
+                set in the `nodeStyle` */}
+            <div className="transformation-node-content">
                 <Handle type="target" position={Position.Left} id="target" />
                 <p>{ data.label }</p>
                 <img src={ icon } width="50" height="50" />
                 <Summary transformation_type={data.type} metadata={data.metadata} />
                 <Handle type="source" position={Position.Right} id="source" />
             </div>
-        </>
+        </div>
     );
 }
 

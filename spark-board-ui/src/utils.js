@@ -5,5 +5,20 @@
  */
 export function getNodeElem(nodeId) {
     // returns the DOM element that contains the node with the given ID
-    return document.querySelectorAll(`[data-id="${nodeId}"]`)[0];
+    let elem = document.querySelectorAll(`[data-id="${nodeId}"]`)[0];
+    if (!elem) {
+        throw new Error(`Could not find node with id ${nodeId}`);
+    }
+    return elem;
+}
+
+
+export function max(...nums) {
+    let m = nums[0];
+    for (let n of nums) {
+        if (n > m) {
+            m = n;
+        }
+    }
+    return m;
 }

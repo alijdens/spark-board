@@ -36,6 +36,9 @@ export function Settings({ settings, setSetting }) {
     // callbacks that bind the settings to the switchs
     const setAnimation = useCallback((value) => setSetting("animationEnabled", value), [settings]);
     const setAnimationOnDrag = useCallback((value) => setSetting("animationEnabledOnDrag", value), [settings]);
+    const setDataSourceDuplication = useCallback((value) => setSetting("duplicateDataSources", value), [settings]);
+    const setOrganizeNodesOnResize = useCallback((value) => setSetting("organizeNodesOnResize", value), [settings]);
+    const setInvertDag = useCallback((value) => setSetting("invertDag", value), [settings]);
 
     // add some background to the settings pannel
     const style = {
@@ -49,6 +52,9 @@ export function Settings({ settings, setSetting }) {
         <div hidden={!expanded}>
             <ToggleSwitch label="Node animation" value={settings.animationEnabled} onChange={setAnimation} />
             <ToggleSwitch label="Node animation on drag" value={settings.animationEnabledOnDrag} onChange={setAnimationOnDrag} />
+            <ToggleSwitch label="Duplicate Data Sources" value={settings.duplicateDataSources} onChange={setDataSourceDuplication} />
+            <ToggleSwitch label="Organize nodes on resize" value={settings.organizeNodesOnResize} onChange={setOrganizeNodesOnResize} />
+            <ToggleSwitch label="Invert DAG" value={settings.invertDag} onChange={setInvertDag} />
         </div>
     </div>
 }
