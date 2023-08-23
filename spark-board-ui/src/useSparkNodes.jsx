@@ -167,7 +167,7 @@ function deduplicateDataSources(nodes, edges) {
 
 /**
  * Return the same input `edges` but inverting the source and target nodes.
- * @param {*} edges List of DAG edges.
+ * @param {Array} edges List of DAG edges.
  * @returns Same list but with edges inverted.
  */
 function invertEdges(edges) {

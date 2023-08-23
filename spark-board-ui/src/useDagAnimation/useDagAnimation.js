@@ -14,9 +14,8 @@ import { stepSimulation } from './physics';
  * @param {Array} edges react-flow edges.
  * @param {Map} targetPositions Map from the node IDs to the target positions (objects with `x` and `y`).
  * @param {Callback} setNodes react-flow state setter to update the nodes.
- * @returns Two elements:
- *          1. Callback that will start the animation when called.
- *          2. Callback that will update the node positions with the ones given.
+ * @param {Boolean} enabled Controls whether the animation is enabled or not.
+ * @returns Memoized object that controls the animation.
  */
 export function useDagAnimation(nodes, edges, targetPositions, setNodes, enabled) {
     // mass of the nodes in the phyical simulation
