@@ -48,9 +48,19 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
     if overwrite and os.path.exists(output_dir):
         shutil.rmtree(output_dir)
 
-    # copy the ui directory to the output directory
-    here = os.path.dirname(__file__)
-    shutil.copytree(os.path.join(here, "ui"), output_dir)
+    try:
+        # copy the ui directory to the output directory
+        here = os.path.dirname(__file__)
+        shutil.copytree(os.path.join(here, "ui"), output_dir)
+    except FileNotFoundError:
+        # this shouldn't happen in production (installing from PyPI) because the files are
+        # included in the package, so it happened during development or we messed up with packaging
+        raise Exception(
+            "The static UI files were not found. If you are running spark-board from source, "
+            "make sure you compile it and copy the files there.\nSee "
+            "https://github.com/alijdens/spark-board/tree/main/spark-board-ui#test-with-spark-board "
+            "for more information."
+        )
 
     # create the output file with the model data
     with open(os.path.join(output_dir, "model.js"), "w") as fp:
