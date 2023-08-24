@@ -22,6 +22,7 @@ class TransformationType(enum.Enum):
     Intersect = "intersect"
     Sample = "sample"
     Expand = "expand"
+    Unknown = "unknown"
 
 
 Metadata = Dict[str, Any]

@@ -7,7 +7,7 @@ from .py4j_utils import iterate_java_object
 
 class TransformationNodeBuilder(object):
 
-    def build(self, java_node: JavaObject) -> TransformationNode:
+    def build(self, java_node: JavaObject, allow_unknown_transformations: bool = True) -> TransformationNode:
         if self._expected_number_of_nodes() is not None:
             assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
 
@@ -15,7 +15,7 @@ class TransformationNodeBuilder(object):
         self._extract_common_metadata(java_node, metadata)
         self._extract_metadata(java_node, metadata)
 
-        children = [build_dag_from_java_object(child) for child in iterate_java_object(java_node.children())]
+        children = [build_dag_from_java_object(child, allow_unknown_transformations) for child in iterate_java_object(java_node.children())]
         columns = self._extract_columns(java_node, children)
 
         node = TransformationNode(
@@ -377,7 +377,25 @@ class ExpandNodeBuilder(TransformationNodeBuilder):
         return 1
 
 
-def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
+class UnknownNodeBuilder(TransformationNodeBuilder):
+    """This class is used to build nodes for transformations that are not supported.
+    Instead of failing and leaving the users without any visualization, we can opt
+    to return an "unknown" transformation and at least provide some kind of output.
+    """
+
+    def _extract_metadata(self, node: JavaObject, metadata: Metadata) -> None:
+        metadata["inferred_type"] = node.getClass().getSimpleName()
+        # toString() is a method of the `TreeNode` class, so it should be available in all nodes
+        metadata["representation"] = node.toString()
+
+    def _get_type(self) -> TransformationType:
+        return TransformationType.Unknown
+
+    def _expected_number_of_nodes(self) -> Optional[int]:
+        return None
+
+
+def build_dag_from_java_object(node: JavaObject, allow_unknown_transformations: bool = True) -> TransformationNode:
     # objects that can parse each transformation sub-tree
     transformation_builders: Dict[str, 'TransformationNodeBuilder'] = {
         "SubqueryAlias": AliasNodeBuilder(),
@@ -404,8 +422,10 @@ def build_dag_from_java_object(node: JavaObject) -> TransformationNode:
         "Expand": ExpandNodeBuilder(),
     }
 
-    builder = transformation_builders.get(node.nodeName())
+    default: Optional['TransformationNodeBuilder'] = UnknownNodeBuilder() if allow_unknown_transformations else None
+
+    builder = transformation_builders.get(node.nodeName(), default)
     if not builder:
         raise NotImplementedError(f"Transformation not supported: '{node.nodeName()}'")
 
-    return builder.build(node)
+    return builder.build(node, allow_unknown_transformations=allow_unknown_transformations)

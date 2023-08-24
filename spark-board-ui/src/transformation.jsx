@@ -7,7 +7,7 @@ import { Handle, Position, getRectOfNodes } from 'reactflow';
 import { max } from './utils';
 import { create } from 'zustand';
 
-import AddColumnIcon from './assets/addColumn.svg';
+import QuestionMarkIcon from './assets/questionMarkIcon.svg';
 import AliasIcon from './assets/alias.svg';
 import ExceptIcon from './assets/except.svg';
 import ExpandIcon from './assets/expand.svg';
@@ -231,6 +231,9 @@ export function getTransformationStyle(transformationType) {
         case "Alias":
             return ["gray", AliasIcon];
 
+        case "Unknown":
+            return ["white", QuestionMarkIcon];
+
         default:
             console.log("WARN: Unknown transformation type: '" + transformationType + "'. Showing a white node")
             return ["white", TableIcon]
@@ -293,6 +296,8 @@ function Summary({transformation_type, metadata}) {
         case "Deduplicate": return <></>
 
         case "Alias": return <p>{metadata.alias}</p>
+
+        case "Unknown": return <p><b>{metadata.inferred_type}</b></p>
 
         default:
             // TODO: Handle this
