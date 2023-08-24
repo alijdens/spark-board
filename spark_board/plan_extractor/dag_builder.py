@@ -8,9 +8,9 @@ from .transformation_node_builders import build_dag_from_java_object
 from .py4j_utils import iterate_java_object
 
 
-def build_dag(df: DataFrame, simplify_dag: bool=True) -> TransformationNode:
+def build_dag(df: DataFrame, simplify_dag: bool = True, allow_unknown_transformations: bool = True) -> TransformationNode:
     first_child = _get_last_transformation(df)
-    raw_dag = build_dag_from_java_object(node=first_child)
+    raw_dag = build_dag_from_java_object(node=first_child, allow_unknown_transformations=allow_unknown_transformations)
     return simplify(raw_dag) if simplify_dag else raw_dag
 
 

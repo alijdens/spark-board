@@ -3,6 +3,7 @@ import shutil
 import json
 import dataclasses
 
+from .import env
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
@@ -36,7 +37,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
     If `simplify_dag` is True, a series of heuristics will be applied to
     simplify the resulting DAG."""
 
-    tree = build_dag(df=df, simplify_dag=simplify_dag)
+    tree = build_dag(df=df, simplify_dag=simplify_dag, allow_unknown_transformations=env.allow_unknown_transformations())
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
@@ -108,6 +109,7 @@ def _transformation_as_dict(node: TransformationNode) -> Dict[str, object]:
         TransformationType.Intersect: 'Intersect',
         TransformationType.Sample: 'Sample',
         TransformationType.Expand: 'Expand',
+        TransformationType.Unknown: 'Unknown',
     }
 
     return {
