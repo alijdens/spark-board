@@ -32,7 +32,7 @@ dump_dataframe(
 
 and that's it! `spark-board` will generate a static website in the defined `output_dir` folder. You can now serve the website using any web server and inspect the operations.
 
-You can check out the avaialble default settings [here](https://github.com/alijdens/spark-board/blob/main/spark_board/default_settings.py).
+You can check out the available default settings [here](https://github.com/alijdens/spark-board/blob/main/spark_board/default_settings.py).
 
 ### Serving
 
