@@ -14,5 +14,5 @@ build:
 
 .PHONY: deploy
 deploy: build
-	rm -r ../spark_board/ui
+	rm -rf ../spark_board/ui
 	cp -r dist ../spark_board/ui
