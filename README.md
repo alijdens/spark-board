@@ -4,6 +4,8 @@
 
 Check out the [examples](https://alijdens.github.io/spark-board/) for a quick overview of the features (and the corresponding examples source code [here](./tests/examples/)).
 
+If you intend to develop `spark-board` or run from source, check out the [documentation](./docs).
+
 ## Usage
 
 `spark-board` takes a PySpark data frame and inspects the operations to build the DAG. This usually is the final step of a PySpark script, right before writing it to disk.
