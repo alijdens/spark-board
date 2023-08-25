@@ -187,6 +187,7 @@ export default function App() {
                 onNodeDrag={onNodeDrag}
                 fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
                 minZoom={0.01}
+                deleteKeyCode={null}
             >
                 <Panel position="top-right"><Settings settings={settings} setSetting={setSetting} /></Panel>
                 <CustomControls organizeNodes={organizeNodes} />
