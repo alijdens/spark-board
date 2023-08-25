@@ -22,6 +22,27 @@ let initialDagLayoutApplied = false;
 // whether the node dimensions were already calculated and stored in the store
 let dimsInitialized = false;
 
+
+/**
+ * Sets the nodes to the positions defined by the current DAG layout.
+ * Note that this does not animate the nodes, it just sets the positions immediately.
+ * 
+ * @param {Array} modelEdges DAG edges.
+ * @param {Map} transformationNodeDims The mapping of node id to node dimensions.
+ * @param {Callback} setNodes React setter for the nodes.
+ */
+function setNodesLayout(modelEdges, transformationNodeDims, setNodes) {
+    const [dagLayout, _] = buildLayout(modelEdges, transformationNodeDims);
+    setNodes((nodes) => nodes.map(node => {
+        if (dagLayout.has(node.id)) {
+            // only update nodes present in the layout
+            node.position = dagLayout.get(node.id);
+        }
+        return node;
+    }));
+}
+
+
 export default function App() {
     const { fitBounds } = useReactFlow();
 
@@ -73,6 +94,8 @@ export default function App() {
             animation.resetSystem(modelNodes, modelEdges, dagLayout);
             if (settings.animationEnabled) {
                 animation.start();
+            } else {
+                setNodesLayout(modelEdges, transformationNodeDims, setNodes);
             }
         }
         drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesInitialized, onGraphUpdate);
@@ -112,14 +135,7 @@ export default function App() {
                 animation.updatePositions(new Map([[node.id, node.position]]));
             });
         } else {
-            const [dagLayout, _] = buildLayout(modelEdges, transformationNodeDims);
-            setNodes(nodes.map(node => {
-                if (dagLayout.has(node.id)) {
-                    // only update nodes present in the layout
-                    node.position = dagLayout.get(node.id);
-                }
-                return node;
-            }));
+            setNodesLayout(modelEdges, transformationNodeDims, setNodes);
         }
     }, [settings, nodes, modelEdges, setNodes]);
 
@@ -142,8 +158,11 @@ export default function App() {
             fitBounds(bounds, { duration: 0, padding: 0.1 });
             // orgnaize the nodes
             organizeNodes();
-    
+
             animation.setTargetPositions(dagLayout);
+            if (!settings.animationEnabled) {
+                setNodesLayout(modelEdges, transformationNodeDims, setNodes);
+            }
             initialDagLayoutApplied = true;
         }
     }, [transformationNodeDims]);
