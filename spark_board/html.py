@@ -73,9 +73,8 @@ def dump_dataframe(
         # included in the package, so it happened during development or we messed up with packaging
         raise RTFMException(
             "The static UI files were not found. If you are running spark-board from source, "
-            "make sure you compile it and copy the files there.\nSee "
-            "https://github.com/alijdens/spark-board/tree/main/spark-board-ui#test-with-spark-board "
-            "for more information."
+            "make sure you compile it and copy the files there.",
+            link="https://github.com/alijdens/spark-board/tree/main/spark-board-ui#test-with-spark-board"
         )
 
     # create the output file with the model data
