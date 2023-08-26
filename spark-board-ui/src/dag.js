@@ -108,8 +108,7 @@ export function buildLayout(edges, tfNodeDims) {
 export function buildAdjacencyList(edges, bidirectional = false) {
     const adjacencyList = new Map();
     for (const edge of edges) {
-        if (edge.animated) {
-            // HACK: animated edges are from the column nodes
+        if (edge.data.is_column_link) {
             continue;
         }
 
