@@ -74,9 +74,7 @@ function drawColumnGraph(setNodes, setEdges, selectedColumn, nodesById, nodesIni
 
     // visual effect over edges for the selected column graph
     setEdges((eds) => eds.map((edge) => {
-        // TODO: Taking advantage of this flag, which is not semantically correct. Add an edge type
-        // instead
-        if (edge.animated) {
+        if (edge.data.is_column_link) {
             return applyEdgesEffectOnColumnTrackingChanged(edge, columnGraph, isColumnSelected);
         }
         return edge;

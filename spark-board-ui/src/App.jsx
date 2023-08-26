@@ -189,10 +189,12 @@ export default function App() {
     const onNodeMouseEnter = useCallback((event, node) => {
         if (node.type == "transformation") {
             setEdges(edges => edges.map(e => {
-                if (e.target == node.id || e.source == node.id) {
-                    e.style = { ...e.style, stroke: "black", strokeWidth: 3 };
-                } else {
-                    e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+                if (!e.data.is_column_link) {
+                    if (e.target == node.id || e.source == node.id) {
+                        e.style = { ...e.style, stroke: "black", strokeWidth: 3 };
+                    } else {
+                        e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+                    }
                 }
                 return e;
             }));
@@ -201,7 +203,9 @@ export default function App() {
 
     const onNodeMouseLeave = useCallback((event, node) => {
         setEdges(edges => edges.map(e => {
-            e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+            if (!e.data.is_column_link) {
+                e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+            }
             return e;
         }));
     }, []);

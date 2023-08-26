@@ -18,7 +18,7 @@ export default function useSparkDag(nodesConfig) {
         return node;
     });
     const baseEdges = model_initialEdges.map(edge => {
-        if (edge.animated) {
+        if (edge.data.is_column_link) {
             return {
                 ...edge,
                 style: {

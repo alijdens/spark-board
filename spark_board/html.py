@@ -135,6 +135,7 @@ def _transformation_link_as_dict(data: dag.DFSNodeData, node: TransformationNode
         "id": f"{data.parent_id}-{node.id}",
         "source": str(data.parent_id),
         "target": str(node.id),
+        "data": {},
     }
 
 
@@ -146,6 +147,9 @@ def _column_link_as_dict(source_column: TransformationColumn, target_column: Tra
         "source": source,
         "target": target,
         "animated": True,
+        "data": {
+            "is_column_link": True,
+        },
     }
 
 
