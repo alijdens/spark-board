@@ -186,6 +186,26 @@ export default function App() {
         }
     }, [animation, settings]);
 
+    const onNodeMouseEnter = useCallback((event, node) => {
+        if (node.type == "transformation") {
+            setEdges(edges => edges.map(e => {
+                if (e.target == node.id || e.source == node.id) {
+                    e.style = { ...e.style, stroke: "black", strokeWidth: 3 };
+                } else {
+                    e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+                }
+                return e;
+            }));
+        }
+    }, []);
+
+    const onNodeMouseLeave = useCallback((event, node) => {
+        setEdges(edges => edges.map(e => {
+            e.style = { ...e.style, stroke: "gray", strokeWidth: 1 };
+            return e;
+        }));
+    }, []);
+
     return (
         <div className="app_container" style={{ width: '100vw', height: '100vh' }}>
             <SideBar
@@ -203,6 +223,8 @@ export default function App() {
                 nodeTypes={nodeTypes}
                 onNodeClick={onNodeClick}
                 onNodeDragStart={onNodeDragStart}
+                onNodeMouseEnter={onNodeMouseEnter}
+                onNodeMouseLeave={onNodeMouseLeave}
                 onNodeDrag={onNodeDrag}
                 fitViewOptions={{ includeHiddenNodes: true, padding: 0.1 }}
                 minZoom={0.01}
