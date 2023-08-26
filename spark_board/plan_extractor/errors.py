@@ -1,0 +1,2 @@
+class RTFMException(Exception):
+    pass

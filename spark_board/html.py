@@ -3,6 +3,8 @@ import shutil
 import json
 import dataclasses
 
+from spark_board.plan_extractor.errors import RTFMException
+
 from .import env
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
@@ -69,7 +71,7 @@ def dump_dataframe(
     except FileNotFoundError:
         # this shouldn't happen in production (installing from PyPI) because the files are
         # included in the package, so it happened during development or we messed up with packaging
-        raise Exception(
+        raise RTFMException(
             "The static UI files were not found. If you are running spark-board from source, "
             "make sure you compile it and copy the files there.\nSee "
             "https://github.com/alijdens/spark-board/tree/main/spark-board-ui#test-with-spark-board "
