@@ -18,6 +18,7 @@ from spark_board import html
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", help="Name of the output directory", default="out")
+    parser.add_argument("--source-code-base", help="Used to set the link to the example source code", default=None)
 
     args = parser.parse_args()
 
@@ -32,11 +33,17 @@ if __name__ == "__main__":
         example_name = file.replace(".py", "")    
         example = __import__(f"tests.examples.{example_name}", fromlist=["df"])
 
+        if args.source_code_base is not None:
+            link = f"{args.source_code_base}/tests/examples/{example_name}.py"
+        else:
+            link = None
+
         html.dump_dataframe(
             df=example.df,
             output_dir=out_dir/example_name,
             overwrite=True,
             default_settings=html.DefaultSettings(),
+            source_code_link=link,
         )
 
         example_names.append(example_name)

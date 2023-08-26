@@ -10,12 +10,14 @@ from .plan_extractor.dag_builder import build_dag
 from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
 
 from pyspark.sql import DataFrame
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 
 # string template to build the JS file containing the graph definition as nodes
 # and links objects required by the framework that will draw them
 MODEL_FILE_TEMPLATE = """
+const model_staticSettings = {static_settings};
+
 const model_defaultSettings = {settings};
 
 const model_initialNodes = {nodes};
@@ -30,12 +32,22 @@ class Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)    
 
 
-def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_settings: DefaultSettings, simplify_dag: bool=True) -> None:
+def dump_dataframe(
+        df: DataFrame,
+        output_dir: str,
+        overwrite: bool,
+        default_settings: DefaultSettings,
+        simplify_dag: bool = True,
+        source_code_link: Optional[str] = None,
+    ) -> None:
     """Create a visual representation of the given `dag` in HTML. The HTML
     files will be saved in the `output_dir` directory. If `overwrite` is
     True, the output directory will be deleted if it already exists.
     If `simplify_dag` is True, a series of heuristics will be applied to
-    simplify the resulting DAG."""
+    simplify the resulting DAG.
+    `source_code_link` is the link to the source code of the DataFrame. This
+    can be a link to a repository, for example. It will appear in the
+    generated site so users can go directly to the code."""
 
     tree = build_dag(df=df, simplify_dag=simplify_dag, allow_unknown_transformations=env.allow_unknown_transformations())
     nodes, links = get_nodes_and_links(tree)
@@ -44,6 +56,7 @@ def dump_dataframe(df: DataFrame, output_dir: str, overwrite: bool, default_sett
         nodes=json.dumps(nodes, indent=4, cls=Encoder),
         links=json.dumps(links, indent=4),
         settings=json.dumps(dataclasses.asdict(default_settings), indent=4),
+        static_settings=json.dumps({"sourceCodeLink": source_code_link}, indent=4),
     )
 
     if overwrite and os.path.exists(output_dir):
