@@ -122,6 +122,13 @@ class LogicalRelationNodeBuilder(TransformationNodeBuilder):
         metadata["type"] = "relation"
         metadata["file_format"] = node.relation().fileFormat().toString()
 
+        if node.relation().getClass().getSimpleName() == "HadoopFsRelation":
+            metadata["location_files"] = [
+                path.toString() for path in
+                iterate_java_object(node.relation().location().rootPaths())
+            ]
+            metadata["partition_schema"] = node.relation().location().partitionSchema().toString()
+
         catalog_table_option = node.catalogTable()
         if not catalog_table_option.isEmpty():
             catalog_table = catalog_table_option.get()

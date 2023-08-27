@@ -254,15 +254,21 @@ function Summary({transformation_type, metadata}) {
         case "Filter": return <></>;
 
         case "DataSource":
-            if (metadata.type === "relation")
+            if (metadata.type == "relation" && metadata.database && metadata.table) {
                 return <div>
                     <p><b>{metadata.type}:</b><br />
                     {metadata.database}.{metadata.table}</p>
                 </div>
-            else
+            } else if (metadata.location_files) {
+                return <div>
+                    <p><b>{metadata.type}:</b><br />
+                    {metadata.location_files[0]}</p>
+                </div>
+            } else {
                 return <div>
                     <p>{metadata.type}</p>
                 </div>
+            }
 
         case "Transform": return <></>;
 
