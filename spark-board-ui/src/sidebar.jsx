@@ -106,7 +106,7 @@ function SideBar({ width, node, nodesById, onSelectedColumnChange, selectedColum
     if (!node) {
         // if no node is selected, do not render the sidebar
         return <div className="sidebar__preferences" style={{width: width, minWidth: width}}>
-            <img src={ SparkBoardLogo } style={logoStyle} />
+            <a href="https://pypi.org/project/spark-board/" target="_blank"><img src={ SparkBoardLogo } style={logoStyle} /></a>
             <h3 style={{textAlign: "center"}}>Just select one node!</h3>
         </div>
     }

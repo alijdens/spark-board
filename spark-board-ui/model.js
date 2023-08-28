@@ -8,6 +8,10 @@
  */
 
 
+const model_staticSettings = {
+    "sourceCodeLink": null
+};
+
 const model_defaultSettings = {
     "animationEnabled": true,
     "animationEnabledOnDrag": true,

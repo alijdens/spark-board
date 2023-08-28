@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, MiniMap, Panel, useNodesInitialized, useReactFlow } from 'reactflow';
 
+import SourceCodeLink from './sourceCodeLink';
 import { shallow } from 'zustand/shallow';
 import TransformationNode, { getTransformationStyle, useTransformationNodeStore, useTransformationNodeDimensionsSync } from './transformation';
 import ColumnNode from './column';
@@ -235,6 +236,7 @@ export default function App() {
                 deleteKeyCode={null}
             >
                 <Panel position="top-right"><Settings settings={settings} setSetting={setSetting} /></Panel>
+                <Panel position="top-left"><SourceCodeLink link={model_staticSettings.sourceCodeLink} /></Panel>
                 <CustomControls organizeNodes={organizeNodes} />
                 <MiniMap zoomable pannable nodeColor={node => {
                     if (node.type == "transformation") {
