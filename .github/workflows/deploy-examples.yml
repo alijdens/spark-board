@@ -47,7 +47,7 @@ jobs:
 
     - name: Build examples
       run: |
-        SOURCE_CODE_BASE="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+        SOURCE_CODE_BASE="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$GITHUB_REF_NAME"
         pipenv run python ./scripts/build_examples.py --output ./examples --source-code-base $SOURCE_CODE_BASE
 
     - name: Upload artifacts
