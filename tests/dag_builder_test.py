@@ -5,7 +5,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from typing import List
+from typing import Any, Dict, List
 
 from tests.context import spark
 
@@ -591,7 +591,10 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- a: double (nullable = true)\n"
                   " |-- b: double (nullable = true)\n"
                   " |-- name: string (nullable = true)\n")
-        self._expect_sort(node=dag, expected_schema=schema, expected_order=["name ASC NULLS FIRST"])
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': ['name ASC NULLS FIRST'],
+          'simple_str': "Ascending by 'name'"
+        })
 
     def test_random_split(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -698,7 +701,10 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- a: double (nullable = true)\n"
                   " |-- b: double (nullable = true)\n"
                   " |-- name: string (nullable = true)\n")
-        self._expect_sort(node=dag, expected_schema=schema, expected_order=['name DESC NULLS LAST'])
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': ['name DESC NULLS LAST'],
+          'simple_str': "Descending by 'name'",
+        })
 
     def test_subtract(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -960,7 +966,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_sort(self, node: TransformationNode, expected_schema: str, expected_order: List[str]) -> None:
+    def _expect_sort(self, node: TransformationNode, expected_schema: str, expected_order: Dict[str, Any]) -> None:
         assert node.type == TransformationType.Sort, f'Expected Sort node but "{node.type}" found'
         
         assert node.metadata['order'] == expected_order
