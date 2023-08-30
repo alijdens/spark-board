@@ -276,7 +276,7 @@ function Summary({transformation_type, metadata}) {
 
         case "Join": return <p><b>Type:</b> {metadata.join_type}</p>;
 
-        case "Sort": return <></>;
+        case "Sort": return <p><b>{metadata.order.simple_str}</b></p>;
 
         case "Window": return <></>;
 

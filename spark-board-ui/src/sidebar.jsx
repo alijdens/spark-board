@@ -83,11 +83,11 @@ function TransformationDataSection({ node }) {
 
         case "Sort":
             return <Section title="Order Criteria">
-                <ul>{
-                    metadata.order.map((criteria) => (
-                        <li><Mono>{ criteria }</Mono></li>
+                {
+                    metadata.order.SQLs.map((criteria) => (
+                        <p><Mono>{ criteria }</Mono></p>
                     ))
-                }</ul>
+                }
             </Section>
 
         case "Limit":
