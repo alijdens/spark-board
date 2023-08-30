@@ -706,6 +706,23 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
           'simple_str': "Descending by 'name'",
         })
 
+    def test_sort_two_columns(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.sort("a", F.col("b").desc())
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': [
+            'a ASC NULLS FIRST',
+            'b DESC NULLS LAST',
+          ],
+          'simple_str': "Multiple Columns",
+        })
+
     def test_subtract(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
         df2 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
