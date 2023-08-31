@@ -66,18 +66,18 @@ function TransformationDataSection({ node }) {
         case "Group":
             return <>
                 <Section title="Aggregate Expressions">
-                    <ul>{
+                    {
                         metadata.aggregate_expressions.map((exp) => (
-                            <li><Mono>{ exp }</Mono></li>
+                            <p><Mono>{ exp }</Mono></p>
                         ))
-                    }</ul>
+                    }
                 </Section>
                 <Section title="Expressions">
-                    <ul>{
+                    {
                         metadata.grouping_expressions.map((exp) => (
-                            <li><Mono>{ exp }</Mono></li>
+                            <p><Mono>{ exp }</Mono></p>
                         ))
-                    }</ul>
+                    }
                 </Section>
             </>
 

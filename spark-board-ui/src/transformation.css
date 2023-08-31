@@ -9,6 +9,9 @@
   box-sizing: border-box; /* make the node wrapper have 100% size but counting the borders */
 }
 
+.condition_string {
+  white-space: nowrap;
+}
 
 /* this is the class used to stylify the selected node */
 .transformation-node-selected {

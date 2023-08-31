@@ -251,7 +251,7 @@ function Summary({transformation_type, metadata}) {
     switch(transformation_type) {
         case "Project": return <></>;
 
-        case "Filter": return <p><b>{truncate(metadata.condition)}</b></p>;
+        case "Filter": return <p class="condition_string"><b>{truncate(metadata.condition)}</b></p>;
 
         case "DataSource":
             if (metadata.type == "relation" && metadata.database && metadata.table) {
