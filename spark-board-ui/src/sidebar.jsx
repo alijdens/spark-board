@@ -68,14 +68,14 @@ function TransformationDataSection({ node }) {
                 <Section title="Aggregate Expressions">
                     {
                         metadata.aggregate_expressions.map((exp) => (
-                            <p><Mono>{ exp }</Mono></p>
+                            <Mono>{ exp }</Mono>
                         ))
                     }
                 </Section>
                 <Section title="Expressions">
                     {
                         metadata.grouping_expressions.map((exp) => (
-                            <p><Mono>{ exp }</Mono></p>
+                            <Mono>{ exp }</Mono>
                         ))
                     }
                 </Section>
@@ -85,7 +85,7 @@ function TransformationDataSection({ node }) {
             return <Section title="Order Criteria">
                 {
                     metadata.order.SQLs.map((criteria) => (
-                        <p><Mono>{ criteria }</Mono></p>
+                        <Mono>{ criteria }</Mono>
                     ))
                 }
             </Section>
