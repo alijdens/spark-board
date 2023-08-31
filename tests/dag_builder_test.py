@@ -5,7 +5,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from typing import List
+from typing import Any, Dict, List
 
 from tests.context import spark
 
@@ -91,7 +91,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         self._expect_aggregate(node=aggregate,
                                expected_schema=schema,
                                expected_aggregate_expressions=['city', 'sum(children) AS total_children', 'avg(height) AS avg_height'],
-                               expected_grouping_expressions=['city'])
+                               expected_grouping_expressions=['city'],
+                               expected_grouping_column='city')
 
 
     def test_join(self) -> None:
@@ -423,8 +424,11 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         schema = ("root\n"
                   " |-- min(a): double (nullable = true)\n")
-        self._expect_aggregate(node=dag, expected_schema=schema, expected_aggregate_expressions=['min(a) AS `min(a)`'], expected_grouping_expressions=[])
-
+        self._expect_aggregate(node=dag,
+                               expected_schema=schema,
+                               expected_aggregate_expressions=['min(a) AS `min(a)`'],
+                               expected_grouping_expressions=[],
+                               expected_grouping_column="No Grouping Column")
 
     def test_alias(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -591,7 +595,10 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- a: double (nullable = true)\n"
                   " |-- b: double (nullable = true)\n"
                   " |-- name: string (nullable = true)\n")
-        self._expect_sort(node=dag, expected_schema=schema, expected_order=["name ASC NULLS FIRST"])
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': ['name ASC NULLS FIRST'],
+          'simple_str': "Ascending by 'name'"
+        })
 
     def test_random_split(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -638,7 +645,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         self._expect_aggregate(node=dag,
                                expected_schema=schema,
                                expected_aggregate_expressions=['a', 'name', 'min(a) AS `min(a)`'],
-                               expected_grouping_expressions=['a', 'name', 'spark_grouping_id'])
+                               expected_grouping_expressions=['a', 'name', 'spark_grouping_id'],
+                               expected_grouping_column="Multiple Columns")
 
         dag = dag.children[0]
         schema = ("root\n"
@@ -698,7 +706,27 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
                   " |-- a: double (nullable = true)\n"
                   " |-- b: double (nullable = true)\n"
                   " |-- name: string (nullable = true)\n")
-        self._expect_sort(node=dag, expected_schema=schema, expected_order=['name DESC NULLS LAST'])
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': ['name DESC NULLS LAST'],
+          'simple_str': "Descending by 'name'",
+        })
+
+    def test_sort_two_columns(self) -> None:
+        df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
+        df = df.sort("a", F.col("b").desc())
+        dag = build_dag(df)
+
+        schema = ("root\n"
+                  " |-- a: double (nullable = true)\n"
+                  " |-- b: double (nullable = true)\n"
+                  " |-- name: string (nullable = true)\n")
+        self._expect_sort(node=dag, expected_schema=schema, expected_order={
+          'SQLs': [
+            'a ASC NULLS FIRST',
+            'b DESC NULLS LAST',
+          ],
+          'simple_str': "Multiple Columns",
+        })
 
     def test_subtract(self) -> None:
         df1 = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -931,11 +959,12 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_aggregate(self, node: TransformationNode, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str]) -> None:
+    def _expect_aggregate(self, node: TransformationNode, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str], expected_grouping_column: str) -> None:
         assert node.type == TransformationType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
 
         assert node.metadata['aggregate_expressions'] == expected_aggregate_expressions
         assert node.metadata['grouping_expressions'] == expected_grouping_expressions
+        assert node.metadata['grouping_column'] == expected_grouping_column
         assert node.metadata['schema_string'] == expected_schema
 
         assert len(node.children) == 1
@@ -960,7 +989,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_sort(self, node: TransformationNode, expected_schema: str, expected_order: List[str]) -> None:
+    def _expect_sort(self, node: TransformationNode, expected_schema: str, expected_order: Dict[str, Any]) -> None:
         assert node.type == TransformationType.Sort, f'Expected Sort node but "{node.type}" found'
         
         assert node.metadata['order'] == expected_order

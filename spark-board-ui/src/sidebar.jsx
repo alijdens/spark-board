@@ -66,28 +66,28 @@ function TransformationDataSection({ node }) {
         case "Group":
             return <>
                 <Section title="Aggregate Expressions">
-                    <ul>{
+                    {
                         metadata.aggregate_expressions.map((exp) => (
-                            <li><Mono>{ exp }</Mono></li>
+                            <Mono>{ exp }</Mono>
                         ))
-                    }</ul>
+                    }
                 </Section>
                 <Section title="Expressions">
-                    <ul>{
+                    {
                         metadata.grouping_expressions.map((exp) => (
-                            <li><Mono>{ exp }</Mono></li>
+                            <Mono>{ exp }</Mono>
                         ))
-                    }</ul>
+                    }
                 </Section>
             </>
 
         case "Sort":
             return <Section title="Order Criteria">
-                <ul>{
-                    metadata.order.map((criteria) => (
-                        <li><Mono>{ criteria }</Mono></li>
+                {
+                    metadata.order.SQLs.map((criteria) => (
+                        <Mono>{ criteria }</Mono>
                     ))
-                }</ul>
+                }
             </Section>
 
         case "Limit":
