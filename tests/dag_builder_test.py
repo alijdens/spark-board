@@ -91,7 +91,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         self._expect_aggregate(node=aggregate,
                                expected_schema=schema,
                                expected_aggregate_expressions=['city', 'sum(children) AS total_children', 'avg(height) AS avg_height'],
-                               expected_grouping_expressions=['city'])
+                               expected_grouping_expressions=['city'],
+                               expected_grouping_column='city')
 
 
     def test_join(self) -> None:
@@ -423,8 +424,11 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         schema = ("root\n"
                   " |-- min(a): double (nullable = true)\n")
-        self._expect_aggregate(node=dag, expected_schema=schema, expected_aggregate_expressions=['min(a) AS `min(a)`'], expected_grouping_expressions=[])
-
+        self._expect_aggregate(node=dag,
+                               expected_schema=schema,
+                               expected_aggregate_expressions=['min(a) AS `min(a)`'],
+                               expected_grouping_expressions=[],
+                               expected_grouping_column="No Grouping Column")
 
     def test_alias(self) -> None:
         df = spark.createDataFrame([], schema="struct<a:double, b:double, name:string>")
@@ -641,7 +645,8 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         self._expect_aggregate(node=dag,
                                expected_schema=schema,
                                expected_aggregate_expressions=['a', 'name', 'min(a) AS `min(a)`'],
-                               expected_grouping_expressions=['a', 'name', 'spark_grouping_id'])
+                               expected_grouping_expressions=['a', 'name', 'spark_grouping_id'],
+                               expected_grouping_column="Multiple Columns")
 
         dag = dag.children[0]
         schema = ("root\n"
@@ -954,11 +959,12 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         assert len(node.children) == 1
 
 
-    def _expect_aggregate(self, node: TransformationNode, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str]) -> None:
+    def _expect_aggregate(self, node: TransformationNode, expected_schema: str, expected_aggregate_expressions: List[str], expected_grouping_expressions: List[str], expected_grouping_column: str) -> None:
         assert node.type == TransformationType.Aggregate, f'Expected Aggregate node but "{node.type}" found'
 
         assert node.metadata['aggregate_expressions'] == expected_aggregate_expressions
         assert node.metadata['grouping_expressions'] == expected_grouping_expressions
+        assert node.metadata['grouping_column'] == expected_grouping_column
         assert node.metadata['schema_string'] == expected_schema
 
         assert len(node.children) == 1

@@ -19,6 +19,12 @@ class AggregateNodeBuilder(TransformationNodeBuilder):
 
         metadata['aggregate_expressions'] = aggregate_expressions
         metadata['grouping_expressions'] = grouping_expressions
+        if len(grouping_expressions) == 0:
+            metadata['grouping_column'] = "No Grouping Column"
+        elif len(grouping_expressions) <= 2:
+            metadata['grouping_column'] = ', '.join(grouping_expressions)
+        else:
+            metadata['grouping_column'] = "Multiple Columns"
 
     def _get_type(self) -> TransformationType:
         return TransformationType.Aggregate
