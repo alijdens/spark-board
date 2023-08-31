@@ -251,7 +251,7 @@ function Summary({transformation_type, metadata}) {
     switch(transformation_type) {
         case "Project": return <></>;
 
-        case "Filter": return <></>;
+        case "Filter": return <p><b>{truncate(metadata.condition)}</b></p>;
 
         case "DataSource":
             if (metadata.type == "relation" && metadata.database && metadata.table) {
@@ -272,7 +272,7 @@ function Summary({transformation_type, metadata}) {
 
         case "Transform": return <></>;
 
-        case "Group": return <p><b>{metadata.grouping_column}</b></p>;
+        case "Group": return <p><b>{truncate(metadata.grouping_column)}</b></p>;
 
         case "Join": return <p><b>Type:</b> {metadata.join_type}</p>;
 
@@ -309,5 +309,14 @@ function Summary({transformation_type, metadata}) {
             // TODO: Handle this
             console.log(`Unhandled transformation '${transformation_type}'`);
             return <></>;
+    }
+}
+
+function truncate(long_string) {
+    const MAX_LENGTH = 25;
+    if (long_string.length <= MAX_LENGTH) {
+        return long_string;
+    } else {
+        return long_string.substring(0, MAX_LENGTH - 3) + "...";
     }
 }
