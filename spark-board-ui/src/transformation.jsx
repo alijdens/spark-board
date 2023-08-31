@@ -272,7 +272,7 @@ function Summary({transformation_type, metadata}) {
 
         case "Transform": return <></>;
 
-        case "Group": return <></>;
+        case "Group": return <p><b>{metadata.grouping_column}</b></p>;
 
         case "Join": return <p><b>Type:</b> {metadata.join_type}</p>;
 
