@@ -41,6 +41,11 @@ jobs:
         run: |
           # overwrite the README.md with the rendered version
           REL_LINKS_BASE=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/
+          echo "REL_LINKS_BASE=$REL_LINKS_BASE"
+          if [[ ! "$GITHUB_REF_NAME" =~ v[0-9]+\.[0-9]+\.[0-9]+ ]] ; then
+            echo "There should be a GITHUB_REF_NAME set to the tag with the version number, got '$GITHUB_REF_NAME'"
+            exit 1
+          fi
           python3 ./scripts/readme_renderer.py --file ./README.md --rel-links-base "$REL_LINKS_BASE" --output ./README.md
 
       # now collect the compiled UI from the previous job and insert it into the package
