@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 from .aggregate_node_builder import AggregateNodeBuilder
 from .alias_node_builder import AliasNodeBuilder
@@ -58,17 +58,11 @@ class Repository(object):
                                                     If True, a syntetic node will be added to the DAG;
                                                     If False, an error will be thrown.
         """
-        self.transformation_builders = initial_node_builders
-        self.allow_unknown_transformations = allow_unknown_transformations
+        self.transformation_builders: Dict[str, TransformationNodeBuilder] = initial_node_builders
+        self.default_node_builder_provider: Callable[[str], TransformationNodeBuilder] = lambda name: UnknownNodeBuilder()
 
     def get_builder(self, node_name: str) -> TransformationNodeBuilder:
-        default: Optional[TransformationNodeBuilder] = UnknownNodeBuilder() if self.allow_unknown_transformations else None
-
-        builder = self.transformation_builders.get(node_name, default)
-        if not builder:
-            raise NotImplementedError(f"Transformation not supported: '{node_name}'")
-
-        return builder
+        return self.transformation_builders.get(node_name, self.default_node_builder_provider(node_name))
 
     def add_builder(self, node_name: str, builder: TransformationNodeBuilder) -> 'Repository':
         self.transformation_builders[node_name] = builder
@@ -78,9 +72,13 @@ class Repository(object):
         self.transformation_builders.pop(node_name)
         return self
 
-    def set_allow_unknown(self, new_value: bool) -> 'Repository':
-        self.allow_unknown_transformations = new_value
+    def with_default_builder(self, provider: Callable[[str], TransformationNodeBuilder]) -> 'Repository':
+        self.default_node_builder_provider = provider
         return self
+
+
+def _raise_error_on_unknown_node(unknown_node_name: str) -> TransformationNodeBuilder:
+    raise NotImplementedError(f"Transformation not supported: '{unknown_node_name}'")
 
 
 def create_empty() -> Repository:
@@ -89,3 +87,7 @@ def create_empty() -> Repository:
 
 def create_default() -> Repository:
     return Repository(_default_node_builders())
+
+
+def create_strict() -> Repository:
+    return create_default().with_default_builder(_raise_error_on_unknown_node)

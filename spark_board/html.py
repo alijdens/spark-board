@@ -10,7 +10,7 @@ from .default_settings import DefaultSettings as DefaultSettings  # explicit re-
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
 from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
-from .plan_extractor.transformation_node_builders.repository import create_default
+from .plan_extractor.transformation_node_builders.repository import create_default, create_strict
 
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple, Optional
@@ -52,7 +52,8 @@ def dump_dataframe(
     can be a link to a repository, for example. It will appear in the
     generated site so users can go directly to the code."""
 
-    tree = build_dag(df=df, simplify_dag=simplify_dag, repository=create_default().set_allow_unknown(env.allow_unknown_transformations()))
+    repository = create_default() if env.allow_unknown_transformations() else create_strict()
+    tree = build_dag(df=df, simplify_dag=simplify_dag, repository=repository)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
