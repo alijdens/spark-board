@@ -7,7 +7,7 @@ from ..py4j_utils import iterate_java_object
 
 class TransformationNodeBuilder(object):
 
-    def build(self, java_node: JavaObject, on_node: Callable[[JavaObject, bool], TransformationNode], allow_unknown_transformations: bool = True) -> TransformationNode:
+    def build(self, java_node: JavaObject, on_node: Callable[[JavaObject], TransformationNode]) -> TransformationNode:
         if self._expected_number_of_nodes() is not None:
             assert java_node.children().size() == self._expected_number_of_nodes(), java_node.children().size()
 
@@ -15,7 +15,7 @@ class TransformationNodeBuilder(object):
         self._extract_common_metadata(java_node, metadata)
         self._extract_metadata(java_node, metadata)
 
-        children = [on_node(child, allow_unknown_transformations) for child in iterate_java_object(java_node.children())]
+        children = [on_node(child) for child in iterate_java_object(java_node.children())]
         columns = self._extract_columns(java_node, children)
 
         node = TransformationNode(

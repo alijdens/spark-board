@@ -5,12 +5,21 @@ from typing import List, Dict, Any, Generator, Optional
 from .dag_simplification import simplify
 from .transformations_dag import TransformationNode
 from .transformation_node_builders import build_dag_from_java_object
+from .transformation_node_builders.repository import Repository, create_default
 from .py4j_utils import iterate_java_object
 
 
-def build_dag(df: DataFrame, simplify_dag: bool = True, allow_unknown_transformations: bool = True) -> TransformationNode:
+def build_dag(df: DataFrame, simplify_dag: bool = True, repository: Repository=create_default()) -> TransformationNode:
+    """
+    Builds a DAG from a PySpark's DataFrame.
+    
+    :param    df:                             The PySpark's DataFrame
+    :param    simplify_dag:                   Indicates whether the DAG simplifiers should be applied or not.
+    :param    repository:                     A repository of specific transformation node builders.    
+    :returns: The DAG for the passed PySpark's DataFrame.
+    """
     first_child = _get_last_transformation(df)
-    raw_dag = build_dag_from_java_object(node=first_child, allow_unknown_transformations=allow_unknown_transformations)
+    raw_dag = build_dag_from_java_object(node=first_child, repository=repository)
     return simplify(raw_dag) if simplify_dag else raw_dag
 
 
