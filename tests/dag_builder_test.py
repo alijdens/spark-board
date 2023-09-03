@@ -837,7 +837,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'name', 'aplusb'])
 
-    def test_fefo(self) -> None:
+    def test_streaming_csv(self) -> None:
         csvSchema = StructType().add("csv_a", "double").add("csv_b", "double")
         df = spark.readStream \
             .options(header=True) \
