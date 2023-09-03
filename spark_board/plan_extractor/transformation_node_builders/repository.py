@@ -21,7 +21,9 @@ from .union_node_builder import UnionNodeBuilder
 from .unknown_node_builder import UnknownNodeBuilder
 from .window_node_builder import WindowNodeBuilder
 
-# objects that can parse each transformation sub-tree
+"""
+Returns the default set of objects that can parse each transformation sub-tree.
+"""
 def _default_node_builders() -> Dict[str, 'TransformationNodeBuilder']:
     return {
         "SubqueryAlias": AliasNodeBuilder(),
@@ -50,6 +52,13 @@ def _default_node_builders() -> Dict[str, 'TransformationNodeBuilder']:
 
 
 class Repository(object):
+    """
+    This class describes a repository of 'TransformationNodeBuilder's indexed by name.
+    The repository is dynamic: builders can be added/removed from the repository.
+    If an unknown transformation name is requested, it will return an UnknownNodeBuilder by default,
+    but this behavior can be changed by using the method 'with_default_builder'.
+    """
+
     def __init__(self, initial_node_builders: Dict[str, TransformationNodeBuilder] = {}, allow_unknown_transformations: bool=True) -> None:
         """
         Constructs a new instance.
@@ -82,12 +91,24 @@ def _raise_error_on_unknown_node(unknown_node_name: str) -> TransformationNodeBu
 
 
 def create_empty() -> Repository:
+    """
+    Creates a 'Repository' without any builder.
+    If a builder is requested, it will return an 'UnknownNodeBuilder' by default.
+    """
     return Repository()
 
 
 def create_default() -> Repository:
+    """
+    Creates a 'Repository' with the default set of 'TransformationNodeBuilder's.
+    If a builder with an unknown name is requested, it will return an 'UnknownNodeBuilder' by default.
+    """
     return Repository(_default_node_builders())
 
 
 def create_strict() -> Repository:
+    """
+    Creates a 'Repository' with the default set of 'TransformationNodeBuilder's.
+    If a builder with an unknown name is requested, it will raise a 'NotImplementedError'.
+    """
     return create_default().with_default_builder(_raise_error_on_unknown_node)
