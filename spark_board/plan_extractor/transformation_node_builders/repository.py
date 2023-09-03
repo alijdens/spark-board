@@ -69,10 +69,17 @@ class Repository(object):
                                                     If False, an error will be thrown.
         """
         self.transformation_builders: Dict[str, TransformationNodeBuilder] = initial_node_builders
-        self.default_node_builder_provider: Callable[[str], TransformationNodeBuilder] = lambda name: UnknownNodeBuilder()
+        self.default_node_builder_provider: Callable[[str], TransformationNodeBuilder] = self._print_warning_and_return_unknown_builder
+
+    def _print_warning_and_return_unknown_builder(self, name: str) -> TransformationNodeBuilder:
+        print(f"[WARN] Unknown node name: '{name}'")
+        return UnknownNodeBuilder()
 
     def get_builder(self, node_name: str) -> TransformationNodeBuilder:
-        return self.transformation_builders.get(node_name, self.default_node_builder_provider(node_name))
+        builder = self.transformation_builders.get(node_name)
+        if not builder:
+            builder = self.default_node_builder_provider(node_name)
+        return builder
 
     def add_builder(self, node_name: str, builder: TransformationNodeBuilder) -> 'Repository':
         self.transformation_builders[node_name] = builder

@@ -31,6 +31,13 @@ def test_strict_repository_throws_exception_for_unknown_transformation_name() ->
     assert f"Transformation not supported: 'Zaraza'" == str(e.value)
 
 
+def test_strict_repository_has_project_builder() -> None:
+    repository = create_strict()
+
+    project_node_builder = repository.get_builder("Project")
+    assert isinstance(project_node_builder, ProjectNodeBuilder)
+
+
 def test_default_repository_doesnt_throw_exception_for_unknown_transformation_name() -> None:
     repository = create_default()
 
