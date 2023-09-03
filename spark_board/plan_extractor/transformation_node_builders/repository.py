@@ -82,6 +82,9 @@ class Repository(object):
         return self
 
     def with_default_builder(self, provider: Callable[[str], TransformationNodeBuilder]) -> 'Repository':
+        """This method sets the callback that will be called whenever a node whose transformation
+        type is not known is encountered. This allows defining how those nodes will be handled (which
+        information will be shown/extracted from it) or whether to fail, for example."""
         self.default_node_builder_provider = provider
         return self
 
