@@ -5,6 +5,7 @@ from .alias_node_builder import AliasNodeBuilder
 from .deduplicate_node_builder import DeduplicateNodeBuilder
 from .except_node_builder import ExceptNodeBuilder, ExceptAllNodeBuilder
 from .expand_node_builder import ExpandNodeBuilder
+from .external_rdd_node_builder import ExternalRDDNodeBuilder
 from .filter_node_builder import FilterNodeBuilder
 from .generate_node_builder import GenerateNodeBuilder
 from .intersect_node_builder import IntersectNodeBuilder, IntersectAllNodeBuilder
@@ -16,6 +17,7 @@ from .project_node_builder import ProjectNodeBuilder
 from .repartition_node_builder import RepartitionNodeBuilder
 from .sample_node_builder import SampleNodeBuilder
 from .sort_node_builder import SortNodeBuilder
+from .streaming_relation_node_builder import StreamingRelationNodeBuilder
 from .transformation_node_builder import TransformationNodeBuilder
 from .union_node_builder import UnionNodeBuilder
 from .unknown_node_builder import UnknownNodeBuilder
@@ -31,7 +33,9 @@ def _default_node_builders() -> Dict[str, 'TransformationNodeBuilder']:
         "Project": ProjectNodeBuilder(),
         "Filter": FilterNodeBuilder(),
         "LogicalRDD": LogicalRDDNodeBuilder(),
+        "ExternalRDD": ExternalRDDNodeBuilder(),
         "LogicalRelation": LogicalRelationNodeBuilder(),
+        "StreamingRelation": StreamingRelationNodeBuilder(),
         "Join": JoinNodeBuilder(),
         "Generate": GenerateNodeBuilder(),
         "Aggregate": AggregateNodeBuilder(),

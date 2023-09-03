@@ -837,6 +837,19 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
         self._expect_project(node=dag, expected_schema=schema, expected_column_names=['a', 'b', 'name', 'aplusb'])
 
+    def test_fefo(self) -> None:
+        csvSchema = StructType().add("csv_a", "double").add("csv_b", "double")
+        df = spark.readStream \
+            .options(header=True) \
+            .schema(csvSchema) \
+            .csv("tests/examples/data/ds.csv")
+        dag = build_dag(df)
+        schema = ("root\n"
+                  " |-- csv_a: double (nullable = true)\n"
+                  " |-- csv_b: double (nullable = true)\n")
+        self._expect_streaming_relation(node=dag, expected_schema=schema, expected_source_name="FileSource[tests/examples/data/ds.csv]")
+
+
     """
     Expectations:
     """
@@ -944,10 +957,14 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
 
     def _expect_rdd(self, node: TransformationNode, expected_schema: str) -> None:
         assert node.type == TransformationType.LogicalRDD, f'Expected LogicalRDD node but "{node.type}" found'
-
-        # TODO: assert metadata
         assert node.metadata['schema_string'] == expected_schema
+        assert len(node.children) == 0
 
+
+    def _expect_streaming_relation(self, node: TransformationNode, expected_schema: str, expected_source_name: str) -> None:
+        assert node.type == TransformationType.StreamingRelation, f'Expected StreamingRelation node but "{node.type}" found'
+        assert node.metadata['schema_string'] == expected_schema
+        assert node.metadata['source_name'] == expected_source_name
         assert len(node.children) == 0
 
 
