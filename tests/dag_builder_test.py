@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from tests.context import spark
 
 from spark_board.plan_extractor.dag_builder import build_dag
+from spark_board.plan_extractor.dag_simplification import default_simplifiers
 from spark_board.plan_extractor.transformations_dag import TransformationNode, TransformationType
 
 import unittest
@@ -160,7 +161,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
         
         df = spark.table("table")
-        dag = build_dag(df=df, simplify_dag=False)
+        dag = build_dag(df=df, dag_simplifiers=[])
 
         # TODO: it seems that tables generate 2 nodes: an "Alias" and the "DataSource"
         #       we could drop the alias in the final DAG because it's redundant
@@ -180,7 +181,7 @@ class DagBuilderUnitTestSuite(unittest.TestCase):
         spark.createDataFrame([], schema="struct<dni:int, name:string>").write.saveAsTable("table")
 
         df = spark.table("table")
-        dag = build_dag(df=df, simplify_dag=True)
+        dag = build_dag(df=df, dag_simplifiers=default_simplifiers())
 
         assert dag.type == TransformationType.Relation
         assert dag.children == []

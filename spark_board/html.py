@@ -9,6 +9,7 @@ from .import env
 from .default_settings import DefaultSettings as DefaultSettings  # explicit re-export for mypy
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
+from .plan_extractor.dag_simplification import default_simplifiers
 from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
 from .plan_extractor.transformation_node_builders.repository import create_default, create_strict
 
@@ -52,8 +53,9 @@ def dump_dataframe(
     can be a link to a repository, for example. It will appear in the
     generated site so users can go directly to the code."""
 
-    repository = create_default() if env.allow_unknown_transformations() else create_strict()
-    tree = build_dag(df=df, simplify_dag=simplify_dag, repository=repository)
+    tnb_repository = create_default() if env.allow_unknown_transformations() else create_strict()
+    dag_simplifiers = default_simplifiers() if simplify_dag else []
+    tree = build_dag(df=df, dag_simplifiers=dag_simplifiers, tnb_repository=tnb_repository)
     nodes, links = get_nodes_and_links(tree)
 
     model_file = MODEL_FILE_TEMPLATE.format(
