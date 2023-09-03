@@ -6,6 +6,7 @@ directory.
 import os
 import argparse
 from spark_board import html
+from spark_board.plan_extractor.dag_simplification import default_simplifiers
 
 
 if __name__ == "__main__":
@@ -20,11 +21,12 @@ if __name__ == "__main__":
     # import the example module
     example = __import__(f"tests.examples.{args.example}", fromlist=["df"])
 
+    dag_simplifiers = [] if args.no_dag_simplification else default_simplifiers()
     here = os.path.dirname(__file__)
     html.dump_dataframe(
         df=example.df,
         output_dir=os.path.join(here, args.output),
         overwrite=args.overwrite,
         default_settings=html.DefaultSettings(),
-        simplify_dag=not args.no_dag_simplification,
+        dag_simplifiers=dag_simplifiers,
     )

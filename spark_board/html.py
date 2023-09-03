@@ -10,8 +10,9 @@ from .default_settings import DefaultSettings as DefaultSettings  # explicit re-
 from .plan_extractor import dag
 from .plan_extractor.dag_builder import build_dag
 from .plan_extractor.dag_simplification import default_simplifiers
+from .plan_extractor.dag_simplification.dag_simplifier import DagSimplifier
 from .plan_extractor.transformations_dag import JoinCondition, TransformationColumn, TransformationNode, TransformationType
-from .plan_extractor.transformation_node_builders.repository import create_default, create_strict
+from .plan_extractor.transformation_node_builders.repository import create_default, create_strict, Repository as TnbRepository
 
 from pyspark.sql import DataFrame
 from typing import Dict, Any, List, Tuple, Optional
@@ -36,25 +37,33 @@ class Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)    
 
 
+def _default_tnb_repository() -> TnbRepository:
+    return create_default() if env.allow_unknown_transformations() else create_strict()
+
+
 def dump_dataframe(
         df: DataFrame,
         output_dir: str,
         overwrite: bool,
         default_settings: DefaultSettings,
-        simplify_dag: bool = True,
+        dag_simplifiers: List[DagSimplifier] = default_simplifiers(),
+        tnb_repository: TnbRepository = _default_tnb_repository(),
         source_code_link: Optional[str] = None,
     ) -> None:
-    """Create a visual representation of the given `dag` in HTML. The HTML
-    files will be saved in the `output_dir` directory. If `overwrite` is
-    True, the output directory will be deleted if it already exists.
-    If `simplify_dag` is True, a series of heuristics will be applied to
-    simplify the resulting DAG.
+    """
+    Create a visual representation of the given `dag` in HTML. The HTML
+    files will be saved in the `output_dir` directory. 
+    If `overwrite` is True, the output directory will be deleted if it already exists.
+    The `dag_simplifiers` are a series of heuristics that will be applied to
+    simplify the resulting DAG. spark_board implements some default ones, but they're 
+    configurable.
+    'tnb_repository' contains the set of known TransformationNodeBuilder instances. The
+    user could add more by configuring it.
     `source_code_link` is the link to the source code of the DataFrame. This
     can be a link to a repository, for example. It will appear in the
-    generated site so users can go directly to the code."""
+    generated site so users can go directly to the code.
+    """
 
-    tnb_repository = create_default() if env.allow_unknown_transformations() else create_strict()
-    dag_simplifiers = default_simplifiers() if simplify_dag else []
     tree = build_dag(df=df, dag_simplifiers=dag_simplifiers, tnb_repository=tnb_repository)
     nodes, links = get_nodes_and_links(tree)
 
