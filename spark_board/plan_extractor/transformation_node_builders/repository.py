@@ -21,10 +21,11 @@ from .union_node_builder import UnionNodeBuilder
 from .unknown_node_builder import UnknownNodeBuilder
 from .window_node_builder import WindowNodeBuilder
 
-"""
-Returns the default set of objects that can parse each transformation sub-tree.
-"""
+
 def _default_node_builders() -> Dict[str, 'TransformationNodeBuilder']:
+    """
+    Returns the default set of objects that can parse each transformation sub-tree.
+    """
     return {
         "SubqueryAlias": AliasNodeBuilder(),
         "Project": ProjectNodeBuilder(),
