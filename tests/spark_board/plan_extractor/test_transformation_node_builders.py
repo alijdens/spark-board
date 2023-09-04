@@ -1,5 +1,6 @@
 import pytest
 from spark_board.plan_extractor.transformation_node_builders import build_dag_from_java_object
+from spark_board.plan_extractor.transformation_node_builders.repository import create_default, create_strict
 from spark_board.plan_extractor.transformations_dag import TransformationType
 
 
@@ -40,7 +41,7 @@ class MockNode:
 
 
 def test_unknown_transformations_are_properly_handled() -> None:
-    dag = build_dag_from_java_object(node=MockNode(), allow_unknown_transformations=True)
+    dag = build_dag_from_java_object(node=MockNode(), repository=create_default())
 
     assert dag.type == TransformationType.Unknown
     assert dag.metadata["inferred_type"] == "mockClass"
@@ -50,6 +51,6 @@ def test_unknown_transformations_are_properly_handled() -> None:
 
 def test_unknown_transformations_are_rejected_if_requested() -> None:
     with pytest.raises(NotImplementedError) as e:
-        build_dag_from_java_object(node=MockNode(), allow_unknown_transformations=False)
+        build_dag_from_java_object(node=MockNode(), repository=create_strict())
 
     assert f"Transformation not supported: 'mockNode'" == str(e.value)
