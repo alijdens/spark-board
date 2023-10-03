@@ -8,7 +8,7 @@ README = (this_directory / "README.md").read_text()
 
 setup(
     name="spark-board",
-    version="0.2.1",
+    version="1.0.0",
     author="Axel Lijdens, Ezequiel Werner",
     url="https://github.com/alijdens/spark-board",
     description="Interactive visualization of Spark jobs",
